@@ -188,7 +188,7 @@ class NooMiNav {
                 await fetch(this.config.push, { 
                     method: 'POST', 
                     headers: { 'Content-Type': 'application/json' }, 
-                    body: JSON.stringify({ title: `💬 新留言: ${contactInfo}`, content: `时间: ${this.time.fullStr}\n内容: ${shortMsg}\n\n👉 点击卡片查看完整详情`, url: detailUrl }) 
+                    body: JSON.stringify({ title: `💬 导航站留言: ${contactInfo}`, content: `时间: ${this.time.fullStr}\n内容: ${shortMsg}\n\n👉 点击卡片查看完整详情`, url: detailUrl }) 
                 });
                 return new Response('✅ 发送成功！站长已收到你的留言', { status: 200 });
             } catch(e) { return new Response('❌ 发送失败，请稍后重试', { status: 500 }); }
