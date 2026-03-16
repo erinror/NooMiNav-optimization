@@ -425,7 +425,12 @@ function renderNewNavHTML(TITLE, SUBTITLE, BG_IMG_URL, DEF_IMG, CONTACT, LINKS, 
   const cardsHtml = safeLinks.map(item => {
     const mainUrl = `/go/${item.id}`;
     const backupHtml = item.backup_url ? `<a href="/go/${item.id}/backup" class="tag-backup" title="备用线路">备用</a>` : '';
-    return `<div class="glass-card resource-card-wrap"><a href="${mainUrl}" class="resource-main-link"><div class="card-icon">${item.emoji || '🔗'}</div><div class="card-info"><h3>${item.name}</h3><p>⚠️ ${item.note || '无说明'}</p></div></a>${backupHtml}</div>`;
+    
+    // 🟢 核心修改：读取自定义的 tag 属性，有内容才显示标签
+    const customTagHtml = item.tag ? `<span class="tag-special">${item.tag}</span>` : '';
+    
+    // 🟢 把 customTagHtml 拼接到标题后面
+    return `<div class="glass-card resource-card-wrap"><a href="${mainUrl}" class="resource-main-link"><div class="card-icon">${item.emoji || '🔗'}</div><div class="card-info"><h3 style="display:flex;align-items:center;flex-wrap:wrap;">${item.name}${customTagHtml}</h3><p>⚠️ ${item.note || '无说明'}</p></div></a>${backupHtml}</div>`;
   }).join('');
   const friendsHtml = safeFriends.map((f) => `<a href="/fgo/${f.id}" target="_blank" class="glass-card partner-card">${f.name}</a>`).join('');
 
@@ -453,6 +458,7 @@ function renderNewNavHTML(TITLE, SUBTITLE, BG_IMG_URL, DEF_IMG, CONTACT, LINKS, 
     .card-icon { font-size: 2.5rem; margin-right: 15px; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.5)); }
     .card-info h3 { font-size: 1.2rem; font-weight: 700; margin-bottom: 4px; }
     .card-info p { font-size: 0.85rem; color: var(--warning); font-weight: 500; }
+    .tag-special { display: inline-flex; align-items: center; margin-left: 8px; padding: 2px 7px; font-size: 0.65rem; font-weight: 800; color: #ecfdf5; background: linear-gradient(135deg, rgba(16, 185, 129, 0.8), rgba(5, 150, 105, 0.9)); border: 1px solid rgba(52, 211, 153, 0.4); border-radius: 8px; box-shadow: 0 2px 10px rgba(16, 185, 129, 0.3); transform: translateY(-1px); text-shadow: 0 1px 2px rgba(0,0,0,0.4); white-space: nowrap; }
     .tag-backup { width: 36px; background: rgba(0,0,0,0.3); border-left: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #e2e8f0; writing-mode: vertical-rl; letter-spacing: 2px; text-decoration: none; transition: 0.3s; }
     .tag-backup:hover { background: var(--primary); color: white; }
     .grid-partners { display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 15px; margin-bottom: 40px; }
