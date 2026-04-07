@@ -1,5 +1,12 @@
-export default { async fetch(request, env, ctx) { return new NooMiNav(request, env, ctx).handle(); } };
-export async function onRequest(context) { return new NooMiNav(context.request, context.env, context).handle(); }
+export default {
+  async fetch(request, env, ctx) {
+    return new NooMiNav(request, env, ctx).handle();
+  }
+};
+
+export async function onRequest(context) {
+  return new NooMiNav(context.request, context.env, context).handle();
+}
 
 class NooMiNav {
   constructor(request, env, ctx) {
@@ -7,9 +14,11 @@ class NooMiNav {
     this.env = env;
     this.ctx = ctx;
     this.url = new URL(request.url);
+
     this.COOKIE_NAME = "nav_session_v13_pro";
     this.DEFAULT_IMG = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073";
     this.FONT_STACK = `'SF Pro Display','Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif`;
+
     const now = new Date(Date.now() + 8 * 3600000);
     this.time = {
       now,
@@ -24,16 +33,19 @@ class NooMiNav {
   async handle() {
     await this.initConfig();
     const path = this.url.pathname;
+
     if (path === "/message") return this.route_MessageDetail();
     if (path === "/contact") return this.route_Contact();
     if (path === `${this.ADMIN_PATH}/api/logs`) return this.api_GetLogs();
     if (path === `${this.ADMIN_PATH}/api/settings`) return this.api_SaveSettings();
     if (path === `${this.ADMIN_PATH}/logout`) return this.route_AdminLogout();
     if (path === this.ADMIN_PATH) return this.route_AdminPage();
+
     if (path.startsWith("/go/") || path.startsWith("/fgo/")) {
       this.loadJsonData();
       return this.route_Redirect(path);
     }
+
     this.loadJsonData();
     return this.route_HomePage();
   }
@@ -46,12 +58,15 @@ class NooMiNav {
         res.results.forEach(r => this.dbSettings[r.key] = r.value);
       } catch (e) {
         if (e.message.includes("no such table")) {
-          try { await this.env.db.prepare("CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)").run(); } catch {}
+          try {
+            await this.env.db.prepare("CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)").run();
+          } catch {}
         }
       }
     }
 
     this.ADMIN_PATH = "/" + (this.env.admin || "admin").replace(/^\//, "");
+
     this.config = {
       admin_pass: this.dbSettings.admin_pass || "123456",
       title: this.dbSettings.title || this.env.TITLE || "云端加速 · 精选导航",
@@ -84,7 +99,7 @@ class NooMiNav {
         this.config.img = imgStr;
       } else {
         const list = imgStr.split(",").map(s => s.trim()).filter(Boolean);
-        if (list.length) {
+        if (list.length > 0) {
           const dayIndex = Math.floor(this.time.now.getTime() / 86400000);
           this.config.img = list[dayIndex % list.length];
         }
@@ -93,41 +108,78 @@ class NooMiNav {
   }
 
   loadJsonData() {
-    const getJsonEnv = k => { try { return this.env[k] ? JSON.parse(this.env[k]) : []; } catch { return []; } };
+    const getJsonEnv = k => {
+      try {
+        return this.env[k] ? JSON.parse(this.env[k]) : [];
+      } catch {
+        return [];
+      }
+    };
     this.LINKS_DATA = this.dbSettings.links ? JSON.parse(this.dbSettings.links) : getJsonEnv("LINKS");
     this.FRIENDS_DATA = this.dbSettings.friends ? JSON.parse(this.dbSettings.friends) : getJsonEnv("FRIENDS");
   }
 
-  getSafeParam(sp, key, def = "") { return sp.get(key)?.trim() || def; }
+  getSafeParam(sp, key, def = "") {
+    return sp.get(key)?.trim() || def;
+  }
 
-  safeCssUrl(url) { return String(url || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'"); }
+  safeCssUrl(url) {
+    return String(url || "").replace(/\\/g, "\\\\").replace(/'/g, "\\'");
+  }
 
   escapeHtml(str = "") {
-    return String(str).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+    return String(str)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
   }
 
   renderRichContent(content = "", format = "html") {
     const raw = String(content || "");
     const mode = String(format || "html").toLowerCase();
-    if (mode === "html") return raw;
+
+    if (mode === "html") {
+      return raw;
+    }
+
     let s = this.escapeHtml(raw);
-    s = s.replace(/^###\s+(.*)$/gm, "<h3>$1</h3>").replace(/^##\s+(.*)$/gm, "<h2>$1</h2>").replace(/^#\s+(.*)$/gm, "<h1>$1</h1>");
-    s = s.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>").replace(/\*(.*?)\*/g, "<em>$1</em>").replace(/`([^`]+)`/g, "<code>$1</code>");
+    s = s.replace(/^###\s+(.*)$/gm, "<h3>$1</h3>");
+    s = s.replace(/^##\s+(.*)$/gm, "<h2>$1</h2>");
+    s = s.replace(/^#\s+(.*)$/gm, "<h1>$1</h1>");
+    s = s.replace(/\*\*(.*?)\*\*/g, "<strong>$1</strong>");
+    s = s.replace(/\*(.*?)\*/g, "<em>$1</em>");
+    s = s.replace(/`([^`]+)`/g, "<code>$1</code>");
     s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, `<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>`);
+
     const lines = s.split("\n");
-    let html = [], inList = false;
+    const html = [];
+    let inList = false;
+
     for (const line of lines) {
       if (/^\s*[-*]\s+/.test(line)) {
-        if (!inList) { html.push("<ul>"); inList = true; }
+        if (!inList) {
+          html.push("<ul>");
+          inList = true;
+        }
         html.push(`<li>${line.replace(/^\s*[-*]\s+/, "")}</li>`);
       } else {
-        if (inList) { html.push("</ul>"); inList = false; }
-        if (!line.trim()) html.push("");
-        else if (/^<h[1-3]>/.test(line)) html.push(line);
-        else html.push(`<p>${line}</p>`);
+        if (inList) {
+          html.push("</ul>");
+          inList = false;
+        }
+        if (!line.trim()) {
+          html.push("");
+        } else if (/^<h[1-3]>/.test(line)) {
+          html.push(line);
+        } else {
+          html.push(`<p>${line}</p>`);
+        }
       }
     }
     if (inList) html.push("</ul>");
+
     return html.join("\n");
   }
 
@@ -138,52 +190,87 @@ class NooMiNav {
   render_BgRuntimeScript() {
     const primary = this.safeCssUrl(this.config.img);
     const fallback = this.safeCssUrl(this.DEFAULT_IMG);
-    return `<script>(function(){if(window.__bgInitDone)return;window.__bgInitDone=true;const body=document.body,primary='${primary}',fallback='${fallback}';function applyBg(url){body.style.backgroundImage="linear-gradient(rgba(2,6,23,0.30),rgba(2,6,23,0.40)),url('"+url+"')"}function loadImage(url,ok,fail){if(!url){fail&&fail();return}const img=new Image();img.onload=()=>ok&&ok(url);img.onerror=()=>fail&&fail();img.referrerPolicy='no-referrer';img.src=url}applyBg(fallback);if(primary&&primary!==fallback)loadImage(primary,applyBg,()=>loadImage(fallback,applyBg));else loadImage(fallback,applyBg)})();</script>`;
+    return `<script>
+(function(){
+  if(window.__bgInitDone)return;
+  window.__bgInitDone=true;
+  const body=document.body,primary='${primary}',fallback='${fallback}';
+  function applyBg(url){
+    body.style.backgroundImage="linear-gradient(rgba(2,6,23,0.30),rgba(2,6,23,0.40)),url('"+url+"')";
+  }
+  function loadImage(url,ok,fail){
+    if(!url){fail&&fail();return}
+    const img=new Image();
+    img.onload=()=>ok&&ok(url);
+    img.onerror=()=>fail&&fail();
+    img.referrerPolicy='no-referrer';
+    img.src=url;
+  }
+  applyBg(fallback);
+  if(primary&&primary!==fallback) loadImage(primary,applyBg,()=>loadImage(fallback,applyBg));
+  else loadImage(fallback,applyBg);
+})();
+</script>`;
   }
 
   render_Head(title) {
     return `<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title>`;
   }
 
-  // routes
   async route_Redirect(path) {
     const parts = path.split("/").filter(Boolean);
     if (parts.length < 2) return new Response("Invalid URL", { status: 400 });
+
     const type = parts[0] === "go" ? "link" : "friend";
     const id = parts[1];
     const isBackup = parts[2] === "backup";
+
     const dataSet = type === "link" ? this.LINKS_DATA : this.FRIENDS_DATA;
     const item = dataSet.find(l => l.id === id);
+
     if (!item) return new Response("Target not found", { status: 404 });
 
     let targetUrl = item.url;
     let logName = item.name;
+
     if (type === "link" && isBackup && item.backup_url) {
       targetUrl = item.backup_url;
       logName += "(备用)";
     }
+
     if (!targetUrl) return new Response("No valid URL available", { status: 400 });
 
-    if (this.env.db) this.ctx.waitUntil(this.db_recordClick(isBackup ? `${id}_backup` : id, logName, type));
+    if (this.env.db) {
+      this.ctx.waitUntil(this.db_recordClick(isBackup ? `${id}_backup` : id, logName, type));
+    }
+
     return Response.redirect(targetUrl, 302);
   }
 
   route_MessageDetail() {
     const dataStr = this.url.searchParams.get("d");
     let msgData = { c: "未知", m: "内容解析失败或已损坏", t: this.time.fullStr };
-    if (dataStr) { try { msgData = JSON.parse(decodeURIComponent(atob(dataStr))); } catch {} }
-    return new Response(this.render_MessageDetail(msgData), { headers: { "content-type": "text/html;charset=UTF-8" } });
+    if (dataStr) {
+      try { msgData = JSON.parse(decodeURIComponent(atob(dataStr))); } catch {}
+    }
+    return new Response(this.render_MessageDetail(msgData), {
+      headers: { "content-type": "text/html;charset=UTF-8" }
+    });
   }
 
   async route_Contact() {
     if (this.request.method === "GET") {
-      return new Response(this.render_ContactPage(), { headers: { "content-type": "text/html;charset=UTF-8" } });
+      return new Response(this.render_ContactPage(), {
+        headers: { "content-type": "text/html;charset=UTF-8" }
+      });
     }
+
     if (this.request.method === "POST") {
       try {
         const formData = await this.request.formData();
         const contactInfo = formData.get("guest_contact") || "匿名访客";
         const messageContent = formData.get("message") || "无内容";
+
         if (!this.config.push) return new Response("⚠️ 站长尚未配置接收通道", { status: 500 });
 
         const payload = JSON.stringify({ c: contactInfo, m: messageContent, t: this.time.fullStr });
@@ -199,6 +286,7 @@ class NooMiNav {
             url: detailUrl
           })
         });
+
         return new Response("✅ 发送成功！站长已收到你的留言", { status: 200 });
       } catch {
         return new Response("❌ 发送失败，请稍后重试", { status: 500 });
@@ -207,7 +295,9 @@ class NooMiNav {
   }
 
   route_HomePage() {
-    return new Response(this.render_HomePage(), { headers: { "content-type": "text/html;charset=UTF-8" } });
+    return new Response(this.render_HomePage(), {
+      headers: { "content-type": "text/html;charset=UTF-8" }
+    });
   }
 
   async route_AdminPage() {
@@ -216,7 +306,13 @@ class NooMiNav {
     if (this.request.method === "POST") {
       const formData = await this.request.formData();
       const password = formData.get("password") || "";
-      if (password.length > 100) return new Response(this.render_LoginPage("密码长度异常"), { headers: { "content-type": "text/html;charset=UTF-8" } });
+
+      if (password.length > 100) {
+        return new Response(this.render_LoginPage("密码长度异常"), {
+          headers: { "content-type": "text/html;charset=UTF-8" }
+        });
+      }
+
       if (password === this.config.admin_pass) {
         return new Response(null, {
           status: 302,
@@ -226,18 +322,26 @@ class NooMiNav {
           }
         });
       }
-      return new Response(this.render_LoginPage("密码错误"), { headers: { "content-type": "text/html;charset=UTF-8" } });
+
+      return new Response(this.render_LoginPage("密码错误"), {
+        headers: { "content-type": "text/html;charset=UTF-8" }
+      });
     }
 
     if (!cookie.includes(`${this.COOKIE_NAME}=true`)) {
-      return new Response(this.render_LoginPage(""), { headers: { "content-type": "text/html;charset=UTF-8" } });
+      return new Response(this.render_LoginPage(""), {
+        headers: { "content-type": "text/html;charset=UTF-8" }
+      });
     }
 
     this.loadJsonData();
     const selected = this.getSafeParam(this.url.searchParams, "m", this.time.dateKey);
+
     try {
       const dashboardData = await this.db_getDashboardData(selected);
-      return new Response(this.render_AdminDashboard(dashboardData, selected), { headers: { "content-type": "text/html;charset=UTF-8" } });
+      return new Response(this.render_AdminDashboard(dashboardData, selected), {
+        headers: { "content-type": "text/html;charset=UTF-8" }
+      });
     } catch (dbErr) {
       return new Response(`Data Error: ${dbErr.message}`, { status: 500 });
     }
@@ -264,8 +368,13 @@ class NooMiNav {
     try {
       let normalized = m.replace("_", "-").substring(0, 7);
       const queryParam = /^\d{4}-\d{2}$/.test(normalized) ? m.replace("_", "-") : this.time.dateKey.replace("_", "-");
-      const { results } = await this.env.db.prepare("SELECT click_time, ip_address, user_agent FROM logs WHERE link_id = ? AND click_time LIKE ? || '%' ORDER BY id DESC LIMIT 50").bind(id, queryParam).all();
-      return new Response(JSON.stringify(results || []), { headers: { "content-type": "application/json" } });
+      const { results } = await this.env.db
+        .prepare("SELECT click_time, ip_address, user_agent FROM logs WHERE link_id = ? AND click_time LIKE ? || '%' ORDER BY id DESC LIMIT 50")
+        .bind(id, queryParam)
+        .all();
+      return new Response(JSON.stringify(results || []), {
+        headers: { "content-type": "application/json" }
+      });
     } catch {
       return new Response("Failed to fetch logs", { status: 500 });
     }
@@ -275,9 +384,12 @@ class NooMiNav {
     if (this.request.method !== "POST") return new Response("Method not allowed", { status: 405 });
     const cookie = this.request.headers.get("Cookie") || "";
     if (!cookie.includes(`${this.COOKIE_NAME}=true`)) return new Response("Unauthorized", { status: 401 });
+
     try {
       const body = await this.request.json();
-      const stmts = Object.keys(body).map(k => this.env.db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").bind(k, String(body[k])));
+      const stmts = Object.keys(body).map(k =>
+        this.env.db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").bind(k, String(body[k]))
+      );
       await this.env.db.batch(stmts);
       return new Response("OK");
     } catch {
@@ -285,19 +397,40 @@ class NooMiNav {
     }
   }
 
-  // db
   async db_recordClick(id, name, type) {
     try {
       const ip = this.request.headers.get("CF-Connecting-IP") || "unknown";
       const userAgent = this.request.headers.get("User-Agent") || "unknown";
       const { dateKey, fullStr, year, todayStr } = this.time;
-      await this.env.db.prepare("INSERT INTO logs (link_id, click_time, month_key, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)").bind(id, fullStr, dateKey, ip, userAgent).run();
-      await this.env.db.prepare(`INSERT INTO stats (id, name, type, total_clicks, year_clicks, month_clicks, day_clicks, last_year, last_month, last_day, last_time) VALUES (?1, ?2, ?3, 1, 1, 1, 1, ?4, ?5, ?7, ?6) ON CONFLICT(id) DO UPDATE SET total_clicks = total_clicks + 1, year_clicks = CASE WHEN last_year = ?4 THEN year_clicks + 1 ELSE 1 END, month_clicks = CASE WHEN last_month = ?5 THEN month_clicks + 1 ELSE 1 END, day_clicks = CASE WHEN last_day = ?7 THEN day_clicks + 1 ELSE 1 END, last_year = ?4, last_month = ?5, last_day = ?7, last_time = ?6, name = ?2, type = ?3`).bind(id, name, type, year, dateKey, fullStr, todayStr).run();
-    } catch (e) { console.error("DB Record Error:", e); }
+
+      await this.env.db
+        .prepare("INSERT INTO logs (link_id, click_time, month_key, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)")
+        .bind(id, fullStr, dateKey, ip, userAgent)
+        .run();
+
+      await this.env.db.prepare(
+        `INSERT INTO stats (id, name, type, total_clicks, year_clicks, month_clicks, day_clicks, last_year, last_month, last_day, last_time)
+         VALUES (?1, ?2, ?3, 1, 1, 1, 1, ?4, ?5, ?7, ?6)
+         ON CONFLICT(id) DO UPDATE SET
+           total_clicks = total_clicks + 1,
+           year_clicks = CASE WHEN last_year = ?4 THEN year_clicks + 1 ELSE 1 END,
+           month_clicks = CASE WHEN last_month = ?5 THEN month_clicks + 1 ELSE 1 END,
+           day_clicks = CASE WHEN last_day = ?7 THEN day_clicks + 1 ELSE 1 END,
+           last_year = ?4,
+           last_month = ?5,
+           last_day = ?7,
+           last_time = ?6,
+           name = ?2,
+           type = ?3`
+      ).bind(id, name, type, year, dateKey, fullStr, todayStr).run();
+    } catch (e) {
+      console.error("DB Record Error:", e);
+    }
   }
 
   async db_getDashboardData(selected) {
     if (!this.env.db) throw new Error("Database not bound");
+
     const currentMonthKey = selected.replace("-", "_").substring(0, 7);
     const queryParam = selected.replace("_", "-");
     const isDayMode = selected.length > 7 && /^\d{4}-\d{2}-\d{2}$/.test(selected);
@@ -313,18 +446,30 @@ class NooMiNav {
     ];
 
     const [statsResult, dailyResult, periodResult, monthContextResult, monthTotalResult] = await Promise.all(queries);
-    const statsMap = new Map(); (statsResult?.results || []).forEach(r => statsMap.set(r.id, r));
-    const dailyMap = new Map(); (dailyResult?.results || []).forEach(r => dailyMap.set(r.link_id, r.count));
-    const periodMap = new Map(); (periodResult?.results || []).forEach(r => periodMap.set(r.link_id, r.count));
-    const monthContextMap = new Map(); (monthContextResult?.results || []).forEach(r => monthContextMap.set(r.link_id, r.count));
-    const monthTotalClicks = monthTotalResult?.results?.[0]?.total || 0;
-    return { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode };
+
+    const statsMap = new Map();
+    const dailyMap = new Map();
+    const periodMap = new Map();
+    const monthContextMap = new Map();
+
+    (statsResult?.results || []).forEach(r => statsMap.set(r.id, r));
+    (dailyResult?.results || []).forEach(r => dailyMap.set(r.link_id, r.count));
+    (periodResult?.results || []).forEach(r => periodMap.set(r.link_id, r.count));
+    (monthContextResult?.results || []).forEach(r => monthContextMap.set(r.link_id, r.count));
+
+    return {
+      statsMap,
+      dailyMap,
+      periodMap,
+      monthContextMap,
+      monthTotalClicks: monthTotalResult?.results?.[0]?.total || 0,
+      isDayMode
+    };
   }
 
-  // render: page styles
   renderHomeStyle() {
     return `<style>
-:root{--glass:rgba(255,255,255,.14);--border:rgba(255,255,255,.16);--text-main:#fff;--text-sub:rgba(226,232,240,.92);--warning:#fcd34d;--primary:#8b5cf6;--primary-2:#38bdf8;--blur:14px;--shadow-soft:0 8px 20px rgba(15,23,42,.14);--shadow-hover:0 14px 28px rgba(15,23,42,.18);--transition:.22s ease}
+:root{--glass:rgba(255,255,255,.14);--border:rgba(255,255,255,.16);--text-main:#fff;--text-sub:rgba(226,232,240,.92);--warning:#fcd34d;--blur:14px;--shadow-soft:0 8px 20px rgba(15,23,42,.14);--shadow-hover:0 14px 28px rgba(15,23,42,.18);--transition:.22s ease}
 .dark-theme{--glass:rgba(15,23,42,.76);--border:rgba(255,255,255,.1);--text-main:#f8fafc;--text-sub:rgba(226,232,240,.88)}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:${this.FONT_STACK};color:var(--text-main);${this.getBgShellStyle()}min-height:100vh;display:flex;flex-direction:column;align-items:center;padding:40px 20px 100px}
@@ -362,7 +507,6 @@ body{font-family:${this.FONT_STACK};color:var(--text-main);${this.getBgShellStyl
 .notice-title{font-size:1.1rem;font-weight:800;background:linear-gradient(to right,#fb7185,#c084fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:15px;display:flex;align-items:center;gap:10px;text-shadow:none}
 .notice-title span{-webkit-text-fill-color:initial}
 .notice-content{font-size:.95rem;line-height:1.8;color:rgba(255,255,255,.92);letter-spacing:.2px}
-.notice-highlight{color:#fcd34d;font-weight:700;padding:0 4px;background:rgba(252,211,77,.1);border-radius:4px}
 .notice-sub{margin-top:8px;font-size:.9rem;opacity:.84;font-style:italic}
 .heart-beat{display:inline-block;animation:beat 1.5s infinite ease-in-out}
 .promo-card{display:flex;align-items:center;gap:18px;margin-bottom:30px;padding:22px 26px;text-decoration:none;color:var(--text-main);background:linear-gradient(135deg,rgba(255,255,255,.16) 0%,rgba(59,130,246,.1) 100%);border:1px solid rgba(125,211,252,.22);box-shadow:0 6px 18px rgba(15,23,42,.12);animation:fadeInUp .6s forwards;animation-delay:.06s}
@@ -379,7 +523,7 @@ body{font-family:${this.FONT_STACK};color:var(--text-main);${this.getBgShellStyl
 
   renderAdminStyle() {
     return `<style>
-:root{--bg-card:rgba(15,23,42,.70);--bg-card-soft:rgba(15,23,42,.58);--bg-elev:rgba(255,255,255,.05);--bd:rgba(255,255,255,.10);--bd-strong:rgba(255,255,255,.16);--txt:#f8fafc;--txt-sub:#94a3b8;--txt-soft:#cbd5e1;--blue:#38bdf8;--violet:#8b5cf6;--gold:#fbbf24;--red:#f87171;--shadow:0 10px 28px rgba(2,6,23,.18);--shadow-soft:0 4px 14px rgba(2,6,23,.12)}
+:root{--bg-card:rgba(15,23,42,.70);--bg-card-soft:rgba(15,23,42,.58);--bg-elev:rgba(255,255,255,.05);--bd:rgba(255,255,255,.10);--bd-strong:rgba(255,255,255,.16);--txt:#f8fafc;--txt-sub:#94a3b8;--txt-soft:#cbd5e1;--blue:#38bdf8;--gold:#fbbf24;--red:#f87171;--shadow:0 10px 28px rgba(2,6,23,.18);--shadow-soft:0 4px 14px rgba(2,6,23,.12)}
 .light-theme{--bg-card:rgba(255,255,255,.92);--bg-card-soft:rgba(255,255,255,.84);--bg-elev:rgba(15,23,42,.04);--bd:rgba(15,23,42,.08);--bd-strong:rgba(15,23,42,.12);--txt:#0f172a;--txt-sub:#475569;--txt-soft:#64748b;--shadow:0 10px 24px rgba(15,23,42,.08);--shadow-soft:0 4px 12px rgba(15,23,42,.06)}
 *{box-sizing:border-box}html{scroll-behavior:smooth}
 body{color:var(--txt);${this.getBgShellStyle()}padding:24px;display:block;margin:0}
@@ -492,37 +636,270 @@ body{color:var(--txt);${this.getBgShellStyle()}padding:24px;display:block;margin
 
   renderHomeScript() {
     return `<script>
-function initSearch(){const searchBox=document.querySelector('.search-box');const grid=document.querySelector('.grid-resources');const noResult=document.createElement('div');noResult.className='no-result';noResult.innerHTML='😕 暂无匹配结果';grid.after(noResult);if(!searchBox)return;let timer=null;searchBox.addEventListener('keydown',e=>e.key==='Enter'&&e.preventDefault());searchBox.addEventListener('input',e=>{clearTimeout(timer);timer=setTimeout(()=>{const kw=e.target.value.toLowerCase().trim();const cards=document.querySelectorAll('.resource-card-wrap,.partner-card');let has=false;cards.forEach(card=>{const match=!kw||card.textContent.toLowerCase().includes(kw);card.style.display=match?'flex':'none';if(match)has=true});noResult.style.display=kw&&!has?'block':'none'},50)})}
-function initThemeToggle(){const btn=document.querySelector('.theme-toggle');if(!btn)return;const toggle=()=>{document.body.classList.toggle('dark-theme');const isDark=document.body.classList.contains('dark-theme');localStorage.setItem('theme',isDark?'dark':'light');btn.textContent=isDark?'☀️':'🌙'};btn.addEventListener('click',toggle);const saved=localStorage.getItem('theme');const prefers=window.matchMedia('(prefers-color-scheme: dark)').matches;if(saved==='dark'||(!saved&&prefers)){document.body.classList.add('dark-theme');btn.textContent='☀️'}}
-function initAnimation(){const base=.05,resources=document.querySelectorAll('.resource-card-wrap');resources.forEach((card,i)=>card.style.animationDelay=\`\${i*base}s\`);const friends=document.querySelectorAll('.partner-card');friends.forEach((card,i)=>card.style.animationDelay=\`\${(resources.length+i)*base}s\`)}
-document.addEventListener('DOMContentLoaded',()=>{initSearch();initThemeToggle();initAnimation()});
+(function(){
+  function initSearch(){
+    const input=document.querySelector('.search-box');
+    const grid=document.querySelector('.grid-resources');
+    if(!input||!grid)return;
+    let noResult=document.querySelector('.no-result');
+    if(!noResult){
+      noResult=document.createElement('div');
+      noResult.className='no-result';
+      noResult.innerHTML='😕 暂无匹配结果';
+      grid.after(noResult);
+    }
+    let timer=null;
+    input.addEventListener('keydown',e=>{if(e.key==='Enter')e.preventDefault()});
+    input.addEventListener('input',e=>{
+      clearTimeout(timer);
+      timer=setTimeout(()=>{
+        const kw=(e.target.value||'').toLowerCase().trim();
+        const cards=document.querySelectorAll('.resource-card-wrap,.partner-card');
+        let has=false;
+        cards.forEach(card=>{
+          const match=!kw||card.textContent.toLowerCase().includes(kw);
+          card.style.display=match?'':'none';
+          if(match) has=true;
+        });
+        noResult.style.display=kw&&!has?'block':'none';
+      },50);
+    });
+  }
+
+  function syncThemeButton(){
+    const btn=document.querySelector('.theme-toggle');
+    if(!btn)return;
+    const isDark=document.body.classList.contains('dark-theme');
+    btn.textContent=isDark?'☀️':'🌙';
+    btn.setAttribute('aria-label',isDark?'切换到浅色':'切换到深色');
+    btn.title=isDark?'切换到浅色':'切换到深色';
+  }
+
+  function initThemeToggle(){
+    const btn=document.querySelector('.theme-toggle');
+    if(!btn)return;
+    try{
+      const saved=localStorage.getItem('theme');
+      const prefers=window.matchMedia('(prefers-color-scheme: dark)').matches;
+      const dark=saved==='dark'||(!saved&&prefers);
+      if(dark) document.body.classList.add('dark-theme');
+      else document.body.classList.remove('dark-theme');
+      syncThemeButton();
+      btn.addEventListener('click',()=>{
+        document.body.classList.toggle('dark-theme');
+        const isDark=document.body.classList.contains('dark-theme');
+        localStorage.setItem('theme',isDark?'dark':'light');
+        syncThemeButton();
+      });
+    }catch(e){console.error(e)}
+  }
+
+  function initAnimation(){
+    const base=.05;
+    const resources=document.querySelectorAll('.resource-card-wrap');
+    resources.forEach((card,i)=>card.style.animationDelay=(i*base)+'s');
+    const friends=document.querySelectorAll('.partner-card');
+    friends.forEach((card,i)=>card.style.animationDelay=((resources.length+i)*base)+'s');
+  }
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    try{initSearch()}catch(e){console.error(e)}
+    try{initThemeToggle()}catch(e){console.error(e)}
+    try{initAnimation()}catch(e){console.error(e)}
+  });
+})();
 </script>`;
   }
 
   renderAdminScript(sysSettings) {
     return `<script>
-const ADMIN_PATH='${this.ADMIN_PATH}';
-const SYS_SET=${JSON.stringify(sysSettings)};
-const LINKS_EXAMPLE=[{id:"google",name:"Google 搜索",url:"https://www.google.com",backup_url:"https://www.google.com.hk",emoji:"🔎",note:"全球常用搜索引擎",tag:"推荐"},{id:"github",name:"GitHub",url:"https://github.com",emoji:"💻",note:"代码托管与开源社区"}];
-const FRIENDS_EXAMPLE=[{id:"friend_1",name:"示例友链站点",url:"https://example.com"},{id:"friend_2",name:"另一个合作伙伴",url:"https://example.org"}];
-function initAdminTheme(){if(localStorage.getItem('admin_theme')==='light'){document.body.classList.add('light-theme');document.querySelector('.theme-toggle').textContent='🌙'}}initAdminTheme();
-function toggleAdminTheme(){document.body.classList.toggle('light-theme');const isLight=document.body.classList.contains('light-theme');localStorage.setItem('admin_theme',isLight?'light':'dark');document.querySelector('.theme-toggle').textContent=isLight?'🌙':'☀️'}
-async function openLog(id,m,n){const dr=document.getElementById('dr'),mask=document.getElementById('mask'),l=document.getElementById('dl');dr.classList.add('open');mask.classList.add('show');document.getElementById('dt').innerText=n+' · 点击记录';l.innerHTML='<li style="padding:20px;text-align:center;color:var(--txt-sub)">加载中...</li>';try{const r=await fetch(\`\${ADMIN_PATH}/api/logs?id=\${id}&m=\${m}\`),data=await r.json();if(!data.length){l.innerHTML='<li style="padding:20px;text-align:center;opacity:.6;color:var(--txt-sub)">该时段无记录</li>';return}let html='';for(let i=0;i<data.length;i++){const x=data[i];html+=\`<li class="log-item"><div class="log-row"><span class="log-index">#\${i+1}</span><span class="log-time">\${x.click_time}</span></div><div class="log-meta"><span>\${x.ip_address}</span><span>\${(x.user_agent||'').slice(0,46)||'unknown'}</span></div></li>\`}l.innerHTML=html}catch(e){l.innerHTML='<li style="padding:20px;text-align:center;color:#f87171">加载失败</li>';console.error(e)}}
-function openSettings(){setVal('s_pass',SYS_SET.admin_pass);setVal('s_title',SYS_SET.title);setVal('s_sub',SYS_SET.subtitle);setVal('s_img',SYS_SET.img);setVal('s_tg',SYS_SET.contact_url);setVal('s_mail',SYS_SET.mail);setVal('s_push',SYS_SET.push);setVal('s_host',SYS_SET.host);setVal('s_notice',SYS_SET.notice);document.getElementById('s_promo_enable').checked=String(SYS_SET.promo_enable||'0')==='1';setVal('s_promo_badge',SYS_SET.promo_badge);setVal('s_promo_title',SYS_SET.promo_title);setVal('s_promo_desc',SYS_SET.promo_desc);setVal('s_promo_url',SYS_SET.promo_url);setVal('s_promo_format',SYS_SET.promo_format||'markdown');setVal('s_links',SYS_SET.links||'[]');setVal('s_friends',SYS_SET.friends||'[]');document.getElementById('set-fs').classList.add('open');document.getElementById('mask').classList.add('show');document.body.style.overflow='hidden'}
-function setVal(id,v){const el=document.getElementById(id);if(el)el.value=v||''}
-function formatJsonField(id){const el=document.getElementById(id);try{el.value=JSON.stringify(JSON.parse(el.value),null,2);alert('✅ 已自动格式化')}catch{alert('⚠️ JSON 格式有误，无法格式化')}}
-function fillLinksExample(){const el=document.getElementById('s_links');if(el.value.trim()&&!confirm('当前 LINKS 内容不为空，确定要用示例模板覆盖吗？'))return;el.value=JSON.stringify(LINKS_EXAMPLE,null,2)}
-function fillFriendsExample(){const el=document.getElementById('s_friends');if(el.value.trim()&&!confirm('当前 FRIENDS 内容不为空，确定要用示例模板覆盖吗？'))return;el.value=JSON.stringify(FRIENDS_EXAMPLE,null,2)}
-async function saveSettings(btn){try{JSON.parse(document.getElementById('s_links').value);JSON.parse(document.getElementById('s_friends').value)}catch{alert('⚠️ JSON 格式解析错误！请检查是否有遗漏的逗号、引号或括号。');return}
-const data={admin_pass:val('s_pass'),title:val('s_title'),subtitle:val('s_sub'),img:val('s_img'),contact_url:val('s_tg'),mail:val('s_mail'),push:val('s_push'),host:val('s_host'),notice:val('s_notice'),promo_enable:document.getElementById('s_promo_enable').checked?'1':'0',promo_badge:val('s_promo_badge'),promo_title:val('s_promo_title'),promo_desc:val('s_promo_desc'),promo_url:val('s_promo_url'),promo_format:val('s_promo_format'),links:val('s_links'),friends:val('s_friends')};
-const old=btn.innerText;btn.innerText='保存中...';btn.disabled=true;try{const res=await fetch(\`\${ADMIN_PATH}/api/settings\`,{method:'POST',body:JSON.stringify(data)});if(res.ok){alert('✅ 配置已保存并生效！');location.reload()}else alert('❌ 保存失败')}catch{alert('❌ 网络错误')}btn.innerText=old;btn.disabled=false}
-function val(id){return document.getElementById(id).value}
-function cls(){document.getElementById('dr').classList.remove('open');document.getElementById('set-fs').classList.remove('open');document.getElementById('mask').classList.remove('show');document.body.style.overflow=''}
-document.addEventListener('keydown',e=>{if(e.key==='Escape')cls()});
+(function(){
+  const ADMIN_PATH='${this.ADMIN_PATH}';
+  const SYS_SET=${JSON.stringify(sysSettings)};
+  const LINKS_EXAMPLE=[
+    {id:"google",name:"Google 搜索",url:"https://www.google.com",backup_url:"https://www.google.com.hk",emoji:"🔎",note:"全球常用搜索引擎",tag:"推荐"},
+    {id:"github",name:"GitHub",url:"https://github.com",emoji:"💻",note:"代码托管与开源社区"}
+  ];
+  const FRIENDS_EXAMPLE=[
+    {id:"friend_1",name:"示例友链站点",url:"https://example.com"},
+    {id:"friend_2",name:"另一个合作伙伴",url:"https://example.org"}
+  ];
+
+  function $(id){return document.getElementById(id)}
+  function val(id){const el=$(id);return el?el.value:''}
+  function setVal(id,v){const el=$(id);if(el)el.value=v||''}
+
+  function syncAdminThemeButton(){
+    const btn=document.querySelector('.theme-toggle');
+    if(!btn)return;
+    const isLight=document.body.classList.contains('light-theme');
+    btn.textContent=isLight?'🌙':'☀️';
+    btn.title=isLight?'切换到深色':'切换到浅色';
+    btn.setAttribute('aria-label',isLight?'切换到深色':'切换到浅色');
+  }
+
+  function initAdminTheme(){
+    try{
+      const saved=localStorage.getItem('admin_theme');
+      if(saved==='light') document.body.classList.add('light-theme');
+      else document.body.classList.remove('light-theme');
+      syncAdminThemeButton();
+    }catch(e){console.error(e)}
+  }
+
+  window.toggleAdminTheme=function(){
+    try{
+      document.body.classList.toggle('light-theme');
+      const isLight=document.body.classList.contains('light-theme');
+      localStorage.setItem('admin_theme',isLight?'light':'dark');
+      syncAdminThemeButton();
+    }catch(e){console.error(e)}
+  };
+
+  window.openLog=async function(id,m,n){
+    const dr=$('dr'),mask=$('mask'),list=$('dl');
+    if(!dr||!mask||!list)return;
+    dr.classList.add('open');
+    mask.classList.add('show');
+    $('dt').innerText=n+' · 点击记录';
+    list.innerHTML='<li style="padding:20px;text-align:center;color:var(--txt-sub)">加载中...</li>';
+    try{
+      const res=await fetch(\`\${ADMIN_PATH}/api/logs?id=\${encodeURIComponent(id)}&m=\${encodeURIComponent(m)}\`);
+      const data=await res.json();
+      if(!Array.isArray(data)||!data.length){
+        list.innerHTML='<li style="padding:20px;text-align:center;opacity:.6;color:var(--txt-sub)">该时段无记录</li>';
+        return;
+      }
+      let html='';
+      for(let i=0;i<data.length;i++){
+        const x=data[i];
+        html+=\`<li class="log-item"><div class="log-row"><span class="log-index">#\${i+1}</span><span class="log-time">\${x.click_time||''}</span></div><div class="log-meta"><span>\${x.ip_address||'unknown'}</span><span>\${(x.user_agent||'').slice(0,46)||'unknown'}</span></div></li>\`;
+      }
+      list.innerHTML=html;
+    }catch(e){
+      console.error(e);
+      list.innerHTML='<li style="padding:20px;text-align:center;color:#f87171">加载失败</li>';
+    }
+  };
+
+  window.openSettings=function(){
+    setVal('s_pass',SYS_SET.admin_pass);
+    setVal('s_title',SYS_SET.title);
+    setVal('s_sub',SYS_SET.subtitle);
+    setVal('s_img',SYS_SET.img);
+    setVal('s_tg',SYS_SET.contact_url);
+    setVal('s_mail',SYS_SET.mail);
+    setVal('s_push',SYS_SET.push);
+    setVal('s_host',SYS_SET.host);
+    setVal('s_notice',SYS_SET.notice);
+    $('s_promo_enable').checked=String(SYS_SET.promo_enable||'0')==='1';
+    setVal('s_promo_badge',SYS_SET.promo_badge);
+    setVal('s_promo_title',SYS_SET.promo_title);
+    setVal('s_promo_desc',SYS_SET.promo_desc);
+    setVal('s_promo_url',SYS_SET.promo_url);
+    setVal('s_promo_format',SYS_SET.promo_format||'markdown');
+    setVal('s_links',SYS_SET.links||'[]');
+    setVal('s_friends',SYS_SET.friends||'[]');
+    $('set-fs').classList.add('open');
+    $('mask').classList.add('show');
+    document.body.style.overflow='hidden';
+  };
+
+  window.formatJsonField=function(id){
+    const el=$(id);
+    if(!el)return;
+    try{
+      el.value=JSON.stringify(JSON.parse(el.value),null,2);
+      alert('✅ 已自动格式化');
+    }catch{
+      alert('⚠️ JSON 格式有误，无法格式化');
+    }
+  };
+
+  window.fillLinksExample=function(){
+    const el=$('s_links');
+    if(!el)return;
+    if(el.value.trim()&&!confirm('当前 LINKS 内容不为空，确定要用示例模板覆盖吗？')) return;
+    el.value=JSON.stringify(LINKS_EXAMPLE,null,2);
+  };
+
+  window.fillFriendsExample=function(){
+    const el=$('s_friends');
+    if(!el)return;
+    if(el.value.trim()&&!confirm('当前 FRIENDS 内容不为空，确定要用示例模板覆盖吗？')) return;
+    el.value=JSON.stringify(FRIENDS_EXAMPLE,null,2);
+  };
+
+  window.saveSettings=async function(btn){
+    try{
+      JSON.parse(val('s_links'));
+      JSON.parse(val('s_friends'));
+    }catch{
+      alert('⚠️ JSON 格式解析错误！请检查是否有遗漏的逗号、引号或括号。');
+      return;
+    }
+
+    const data={
+      admin_pass:val('s_pass'),
+      title:val('s_title'),
+      subtitle:val('s_sub'),
+      img:val('s_img'),
+      contact_url:val('s_tg'),
+      mail:val('s_mail'),
+      push:val('s_push'),
+      host:val('s_host'),
+      notice:val('s_notice'),
+      promo_enable:$('s_promo_enable').checked?'1':'0',
+      promo_badge:val('s_promo_badge'),
+      promo_title:val('s_promo_title'),
+      promo_desc:val('s_promo_desc'),
+      promo_url:val('s_promo_url'),
+      promo_format:val('s_promo_format'),
+      links:val('s_links'),
+      friends:val('s_friends')
+    };
+
+    const old=btn.innerText;
+    btn.innerText='保存中...';
+    btn.disabled=true;
+    try{
+      const res=await fetch(\`\${ADMIN_PATH}/api/settings\`,{
+        method:'POST',
+        body:JSON.stringify(data)
+      });
+      if(res.ok){
+        alert('✅ 配置已保存并生效！');
+        location.reload();
+      }else{
+        alert('❌ 保存失败');
+      }
+    }catch(e){
+      console.error(e);
+      alert('❌ 网络错误');
+    }
+    btn.innerText=old;
+    btn.disabled=false;
+  };
+
+  window.cls=function(){
+    const dr=$('dr'),fs=$('set-fs'),mask=$('mask');
+    if(dr) dr.classList.remove('open');
+    if(fs) fs.classList.remove('open');
+    if(mask) mask.classList.remove('show');
+    document.body.style.overflow='';
+  };
+
+  document.addEventListener('keydown',e=>{
+    if(e.key==='Escape') window.cls();
+  });
+
+  document.addEventListener('DOMContentLoaded',()=>{
+    initAdminTheme();
+  });
+})();
 </script>`;
   }
 
-  // render: small template blocks
   renderResourceCards() {
     return (Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : []).map(item => {
       const backupHtml = item.backup_url ? `<a href="/go/${item.id}/backup" class="tag-backup" title="备用线路">备用</a>` : "";
@@ -532,7 +909,9 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')cls()});
   }
 
   renderFriendCards() {
-    return (Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : []).map(f => `<a href="/fgo/${f.id}" target="_blank" class="glass-card partner-card">${f.name}</a>`).join("");
+    return (Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : []).map(f =>
+      `<a href="/fgo/${f.id}" target="_blank" class="glass-card partner-card">${f.name}</a>`
+    ).join("");
   }
 
   renderFab() {
@@ -560,6 +939,7 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')cls()});
     const realTodayVal = dailyMap.get(id) || 0;
     const selectedTargetVal = periodMap.get(id) || 0;
     const monthContextVal = monthContextMap.get(id) || 0;
+
     let col2Label, col2Val, col3Label, col3Val, progressVal = 0;
 
     if (isDayMode) {
@@ -576,10 +956,14 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')cls()});
       progressVal = viewTotalDenominator > 0 ? ((selectedTargetVal / viewTotalDenominator) * 100).toFixed(1) : 0;
     }
 
-    let timeDisplay = stat.last_time || "暂无", timeIcon = "🕒";
+    let timeDisplay = stat.last_time || "暂无";
+    let timeIcon = "🕒";
     if (timeDisplay !== "暂无") {
       if (isDayMode) timeDisplay = timeDisplay.split(" ")[1] || timeDisplay;
-      else { timeDisplay = timeDisplay.split(" ")[0].substring(5); timeIcon = "📅"; }
+      else {
+        timeDisplay = timeDisplay.split(" ")[0].substring(5);
+        timeIcon = "📅";
+      }
     }
 
     if (isMini) {
@@ -605,12 +989,33 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')cls()});
     return `<!DOCTYPE html><html lang="zh-CN"><head>${this.render_Head(this.config.title)}${this.renderHomeStyle()}${this.renderHomeScript()}</head><body><button class="theme-toggle" title="切换主题">🌙</button><div class="container"><div class="header glass-card"><h1>${this.config.title}</h1><p>${this.config.subtitle}</p></div><div class="search-container"><div class="search-wrap"><span class="search-icon">🔎</span><input type="text" class="search-box" placeholder="搜索导航项目..." /></div></div>${this.renderNoticeCard()}${this.renderPromoCard()}<div class="section-title">💎 精选</div><div class="grid-resources">${this.renderResourceCards()}</div><div class="section-title">🔗 友链</div><div class="grid-partners">${this.renderFriendCards()}</div></div>${this.renderFab()}${this.render_BgRuntimeScript()}</body></html>`;
   }
 
+  renderSettingsModal() {
+    return `<div class="fs-modal" id="set-fs"><div class="settings-wrap"><div class="settings-head"><div><h3 class="settings-title">⚙️ 系统全局配置</h3><div class="settings-sub">支持 JSON 自动格式化、示例模板填充、推广卡 HTML / Markdown 内容配置。</div></div><div class="settings-actions"><button class="action-btn action-soft" onclick="cls()">取消 (Esc)</button><button class="action-btn action-primary" onclick="saveSettings(this)">💾 保存并生效</button></div></div><div class="settings-body"><div class="settings-grid">
+<div class="field"><label>后台登录密码</label><input type="text" id="s_pass" placeholder="默认: 123456"></div>
+<div class="field"><label>网站主标题</label><input type="text" id="s_title"></div>
+<div class="field"><label>网站副标题</label><input type="text" id="s_sub"></div>
+<div class="field"><label>客服支持链接</label><input type="text" id="s_tg" placeholder="例如 Telegram / 工单地址"></div>
+<div class="field full"><label>背景图 URL（多图用逗号隔开，支持 Base64）</label><input type="text" id="s_img" placeholder="留空使用默认高清壁纸"><small>建议使用可公开访问、跨浏览器兼容的图片地址。如果图床开启防盗链，部分浏览器会回退到默认背景。</small></div>
+<div class="field"><label>联系邮箱</label><input type="text" id="s_mail" placeholder="留空则不显示底部邮箱按钮"></div>
+<div class="field"><label>留言板推送 Webhook</label><input type="text" id="s_push" placeholder="留空则不显示留言按钮"></div>
+<div class="field full"><label>温馨提示公告（支持 HTML，清空则隐藏）</label><textarea id="s_notice"></textarea></div>
+<div class="field full"><label>推广卡开关 / 配置</label><div class="switch-row" style="margin-bottom:12px;"><label class="switch"><input type="checkbox" id="s_promo_enable"><span class="slider"></span></label><span style="color:var(--txt-sub);font-weight:700;">启用首页推广卡</span></div><div class="settings-grid"><div class="field"><label>推广卡徽标文字</label><input type="text" id="s_promo_badge" placeholder="如：免费域名可托管 CF"></div><div class="field"><label>推广卡标题</label><input type="text" id="s_promo_title" placeholder="如：本站域名服务由 ... 提供支持"></div><div class="field"><label>推广卡跳转链接</label><input type="text" id="s_promo_url" placeholder="https://..."></div><div class="field"><label>推广卡内容格式</label><select id="s_promo_format"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div></div><div style="margin-top:16px;"><label style="display:block;margin-bottom:10px;font-size:.88rem;color:var(--txt-sub);font-weight:800;">推广卡描述内容</label><textarea id="s_promo_desc" style="min-height:150px"></textarea><small>支持 Markdown 或 HTML。Markdown 支持标题、加粗、斜体、列表、链接、行内代码等基础语法。</small></div></div>
+<div class="field full"><label>自定义卡片跳转域名</label><input type="text" id="s_host" placeholder="如果不填，默认自动使用当前访问域名"></div>
+<div class="field full"><label>💎 精选资源 LINKS（JSON 格式）</label><div class="field-tools"><button class="mini-btn" type="button" onclick="formatJsonField('s_links')">自动格式化</button><button class="mini-btn" type="button" onclick="fillLinksExample()">填入示例模板</button></div><textarea id="s_links" class="code"></textarea></div>
+<div class="field full"><label>🔗 合作伙伴 FRIENDS（JSON 格式）</label><div class="field-tools"><button class="mini-btn" type="button" onclick="formatJsonField('s_friends')">自动格式化</button><button class="mini-btn" type="button" onclick="fillFriendsExample()">填入示例模板</button></div><textarea id="s_friends" class="code"></textarea></div>
+</div></div></div></div>`;
+  }
+
   render_AdminDashboard(dbData, m) {
     const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
     const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
     const activeIds = new Set([...safeLinks.map(i => i.id), ...safeFriends.map(i => i.id)]);
+
     let historyTotal = 0;
-    for (const v of dbData.statsMap.values()) if (activeIds.has(v.id)) historyTotal += (v.total_clicks || 0);
+    for (const v of dbData.statsMap.values()) {
+      if (activeIds.has(v.id)) historyTotal += (v.total_clicks || 0);
+    }
+
     let viewTotalDenominator = 0;
     if (dbData.isDayMode) for (const c of dbData.monthContextMap.values()) viewTotalDenominator += c;
     else for (const c of dbData.periodMap.values()) viewTotalDenominator += c;
@@ -619,8 +1024,10 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')cls()});
     try {
       if (dbData.isDayMode) {
         const d = new Date(m);
-        d.setDate(d.getDate() - 1); prevDay = d.toISOString().split("T")[0];
-        d.setDate(d.getDate() + 2); nextDay = d.toISOString().split("T")[0];
+        d.setDate(d.getDate() - 1);
+        prevDay = d.toISOString().split("T")[0];
+        d.setDate(d.getDate() + 2);
+        nextDay = d.toISOString().split("T")[0];
       }
       const cy = parseInt(m.substring(0, 4)), cm = parseInt(m.substring(5, 7));
       let py = cy, pm = cm - 1; if (pm === 0) { py -= 1; pm = 12; }
@@ -661,22 +1068,5 @@ document.addEventListener('keydown',e=>{if(e.key==='Escape')cls()});
       : "";
 
     return `<!DOCTYPE html><html lang="zh-CN"><head>${this.render_Head(this.config.title)}${this.renderAdminStyle()}</head><body><button class="theme-toggle" onclick="toggleAdminTheme()" title="切换主题">☀️</button><div class="admin-shell"><section class="topbar"><div><h1 class="hero-title">📊 数据看板</h1><div class="hero-sub">当前查看维度：<strong style="color:var(--txt)">${m}</strong>。你可以在这里查看精选资源与友链的点击情况、快速预览公告与推广卡内容，并直接进入系统配置面板修改站点设置。</div><div class="hero-tags"><span class="pill">🧭 路径：${this.ADMIN_PATH}</span><span class="pill">🕒 时间：${this.time.fullStr}</span><span class="pill">📦 历史总计：${historyTotal}</span></div></div><div class="top-actions"><div class="quick-stats"><div class="quick-card"><div class="quick-label">总项目</div><div class="quick-value">${safeLinks.length}</div></div><div class="quick-card"><div class="quick-label">本月总点击</div><div class="quick-value" style="color:var(--blue)">${dbData.monthTotalClicks}</div></div><div class="quick-card"><div class="quick-label">活跃项目</div><div class="quick-value">${Array.from(dbData.statsMap.values()).filter(c => c.total_clicks > 0).length}</div></div></div><div class="action-row"><a href="/" class="action-btn action-soft">🏠 返回主页</a><button class="action-btn action-primary" onclick="openSettings()">⚙️ 系统设置</button><a href="${this.ADMIN_PATH}/logout" class="action-btn action-danger">登出</a></div></div></section><section class="toolbar"><div class="toolbar-left"><a href="${this.ADMIN_PATH}?m=${prevMonthStr}" class="tbtn" title="上个月">⏪ 上月</a><a href="${this.ADMIN_PATH}?m=${prevDay}" class="tbtn">◀ 上一项</a><div class="date-chip" title="点击切换日期"><span>📅</span><strong>${m}</strong><input type="date" value="${dbData.isDayMode ? m : ""}" onchange="if(this.value) location.href='${this.ADMIN_PATH}?m='+this.value"></div><a href="${this.ADMIN_PATH}?m=${nextDay}" class="tbtn">下一项 ▶</a><a href="${this.ADMIN_PATH}?m=${nextMonthStr}" class="tbtn" title="下个月">下月 ⏩</a></div><div class="toolbar-right"><a href="${this.ADMIN_PATH}?m=${this.time.todayStr}" class="tbtn ${m === this.time.todayStr ? "active" : ""}">今日</a><a href="${this.ADMIN_PATH}?m=${this.time.dateKey}" class="tbtn ${m === this.time.dateKey ? "active" : ""}">本月</a></div></section><div class="grid-main">${noticeHtml}${promoHtml}<section class="panel"><div class="panel-header"><div><h3 class="panel-title">💎 精选数据</h3><div class="panel-sub">点击任意卡片可查看访问记录详情</div></div></div><div class="stats-grid">${linkHtml}</div></section><section class="panel"><div class="panel-header"><div><h3 class="panel-title">🔗 友链数据</h3><div class="panel-sub">简要查看友链表现</div></div></div><div class="mini-grid">${friendHtml}</div></section></div></div><div class="mask" id="mask" onclick="cls()"></div><aside class="drawer" id="dr"><div class="drawer-head"><h3 class="drawer-title" id="dt">点击记录</h3><button class="icon-btn" onclick="cls()">×</button></div><ul class="log-list" id="dl"></ul></aside>${this.renderSettingsModal()}${this.render_BgRuntimeScript()}${this.renderAdminScript(sysSettings)}</body></html>`;
-  }
-
-  renderSettingsModal() {
-    return `<div class="fs-modal" id="set-fs"><div class="settings-wrap"><div class="settings-head"><div><h3 class="settings-title">⚙️ 系统全局配置</h3><div class="settings-sub">支持 JSON 自动格式化、示例模板填充、推广卡 HTML / Markdown 内容配置。</div></div><div class="settings-actions"><button class="action-btn action-soft" onclick="cls()">取消 (Esc)</button><button class="action-btn action-primary" onclick="saveSettings(this)">💾 保存并生效</button></div></div><div class="settings-body"><div class="settings-grid">
-<div class="field"><label>后台登录密码</label><input type="text" id="s_pass" placeholder="默认: 123456"></div>
-<div class="field"><label>网站主标题</label><input type="text" id="s_title"></div>
-<div class="field"><label>网站副标题</label><input type="text" id="s_sub"></div>
-<div class="field"><label>客服支持链接</label><input type="text" id="s_tg" placeholder="例如 Telegram / 工单地址"></div>
-<div class="field full"><label>背景图 URL（多图用逗号隔开，支持 Base64）</label><input type="text" id="s_img" placeholder="留空使用默认高清壁纸"><small>建议使用可公开访问、跨浏览器兼容的图片地址。如果图床开启防盗链，部分浏览器会回退到默认背景。</small></div>
-<div class="field"><label>联系邮箱</label><input type="text" id="s_mail" placeholder="留空则不显示底部邮箱按钮"></div>
-<div class="field"><label>留言板推送 Webhook</label><input type="text" id="s_push" placeholder="留空则不显示留言按钮"></div>
-<div class="field full"><label>温馨提示公告（支持 HTML，清空则隐藏）</label><textarea id="s_notice"></textarea></div>
-<div class="field full"><label>推广卡开关 / 配置</label><div class="switch-row" style="margin-bottom:12px;"><label class="switch"><input type="checkbox" id="s_promo_enable"><span class="slider"></span></label><span style="color:var(--txt-sub);font-weight:700;">启用首页推广卡</span></div><div class="settings-grid"><div class="field"><label>推广卡徽标文字</label><input type="text" id="s_promo_badge" placeholder="如：免费域名可托管 CF"></div><div class="field"><label>推广卡标题</label><input type="text" id="s_promo_title" placeholder="如：本站域名服务由 ... 提供支持"></div><div class="field"><label>推广卡跳转链接</label><input type="text" id="s_promo_url" placeholder="https://..."></div><div class="field"><label>推广卡内容格式</label><select id="s_promo_format"><option value="markdown">Markdown</option><option value="html">HTML</option></select></div></div><div style="margin-top:16px;"><label style="display:block;margin-bottom:10px;font-size:.88rem;color:var(--txt-sub);font-weight:800;">推广卡描述内容</label><textarea id="s_promo_desc" style="min-height:150px"></textarea><small>支持 Markdown 或 HTML。Markdown 支持标题、加粗、斜体、列表、链接、行内代码等基础语法。</small></div></div>
-<div class="field full"><label>自定义卡片跳转域名</label><input type="text" id="s_host" placeholder="如果不填，默认自动使用当前访问域名"></div>
-<div class="field full"><label>💎 精选资源 LINKS（JSON 格式）</label><div class="field-tools"><button class="mini-btn" type="button" onclick="formatJsonField('s_links')">自动格式化</button><button class="mini-btn" type="button" onclick="fillLinksExample()">填入示例模板</button></div><textarea id="s_links" class="code"></textarea></div>
-<div class="field full"><label>🔗 合作伙伴 FRIENDS（JSON 格式）</label><div class="field-tools"><button class="mini-btn" type="button" onclick="formatJsonField('s_friends')">自动格式化</button><button class="mini-btn" type="button" onclick="fillFriendsExample()">填入示例模板</button></div><textarea id="s_friends" class="code"></textarea></div>
-</div></div></div></div>`;
   }
 }
