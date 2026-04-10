@@ -933,16 +933,17 @@ class NooMiNav {
     .rich-content p { margin: 0 0 8px; }
     .rich-content p:last-child { margin-bottom: 0; }
 
-    /* 右侧账号购买广告 */
     .buy-side-ad{
-      position:fixed; right:18px; top:50%; transform:translateY(-50%);
-      width:220px; z-index:180;
-      background:rgba(15,23,42,.82);
-      border:1px solid rgba(255,255,255,.16);
-      border-radius:14px; padding:12px;
-      backdrop-filter:blur(6px);
-      box-shadow:0 12px 28px rgba(0,0,0,.25);
-    }
+  position:fixed; right:18px; top:50%; transform:translateY(-50%);
+  width:120px;              /* 原来 220，改大就是“更长” */
+  min-height:300px;         /* 想更高可以加这个 */
+  z-index:180;
+  background:rgba(15,23,42,.82);
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:14px; padding:16px;
+  backdrop-filter:blur(6px);
+  box-shadow:0 12px 28px rgba(0,0,0,.25);
+}
     .buy-side-link{ color:#fff; text-decoration:none; display:block; }
     .buy-side-badge{
       display:inline-block; font-size:.72rem; padding:2px 8px; border-radius:999px;
