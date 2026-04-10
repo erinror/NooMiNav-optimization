@@ -2583,18 +2583,19 @@ function fillAccountHtmlExample(){
             btn.disabled = true;
 
             try {
-              const res = await fetch(`${ADMIN_PATH}/api/settings`, {
+              const res = await fetch(ADMIN_PATH + '/api/settings', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify(data)
 });
+                
               if (res.ok) {
-  alert('✅ 配置已保存并生效！');
-  location.reload();
-} else {
-  const text = await res.text();
-  alert('❌ 保存失败：' + text);
-}
+                  alert('✅ 配置已保存并生效！');
+                  location.reload();
+                  } else {
+                  const text = await res.text();
+                  alert('❌ 保存失败：' + text);
+              }
             } catch(e) {
               alert('❌ 网络错误');
             }
