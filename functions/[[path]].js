@@ -930,93 +930,94 @@ class NooMiNav {
 
       /* ✅ 中间账号卡片 */
       .account-card {
-        display: flex;
-        align-items: center;
-        gap: 18px;
-        margin-bottom: 18px;
-        padding: 22px 26px;
-        background: linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(59,130,246,0.10) 100%);
-        border: 1px solid rgba(110,231,183,0.22);
-      }
-      .account-card:hover {
-        transform: translateY(-2px);
-        box-shadow: var(--shadow-hover);
-      }
-      .account-card-badge {
-        flex-shrink: 0;
-        min-width: 138px;
-        padding: 12px 16px;
-        border-radius: 999px;
-        text-align: center;
-        font-size: 0.95rem;
-        font-weight: 800;
-        color: #ecfdf5;
-        background: linear-gradient(135deg, rgba(16,185,129,0.34), rgba(59,130,246,0.18));
-        border: 1px solid rgba(167,243,208,0.26);
-      }
-      .account-card-main {
-        flex: 1;
-        min-width: 0;
-      }
-      .account-card-rich h1,
-      .account-card-rich h2,
-      .account-card-rich h3 {
-        margin: 0 0 10px;
-        line-height: 1.35;
-        color: #fff;
-      }
-      .account-card-rich h1 { font-size: 1.15rem; }
-      .account-card-rich h2 { font-size: 1.08rem; }
-      .account-card-rich h3 { font-size: 1rem; }
-      .account-card-rich p {
-        margin: 0 0 8px;
-        font-size: 0.95rem;
-        color: rgba(226, 232, 240, 0.92);
-        line-height: 1.7;
-      }
-      .account-card-rich p:last-child { margin-bottom: 0; }
-      .account-card-rich ul { margin: 0 0 10px 18px; padding: 0; }
-      .account-card-rich li {
-        margin: 6px 0;
-        font-size: 0.92rem;
-        color: rgba(226,232,240,0.92);
-      }
-      .account-card-rich code {
-        padding: 2px 6px;
-        border-radius: 8px;
-        background: rgba(255,255,255,.08);
-        border: 1px solid rgba(255,255,255,.12);
-      }
-      .account-card-rich a {
-        color: #93c5fd;
-        word-break: break-all;
-      }
-      .account-card-rich .ad-badge {
-        display: inline-flex;
-        align-items: center;
-        padding: 4px 10px;
-        margin-bottom: 10px;
-        font-size: .72rem;
-        font-weight: 800;
-        border-radius: 999px;
-        background: rgba(16,185,129,.18);
-        border: 1px solid rgba(16,185,129,.35);
-        color: #d1fae5;
-      }
-      .account-card-rich .ad-btn {
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-top: 10px;
-        padding: 10px 14px;
-        border-radius: 12px;
-        text-decoration: none;
-        color: #fff;
-        font-weight: 800;
-        background: linear-gradient(135deg,#3b82f6,#8b5cf6);
-        border: 1px solid rgba(255,255,255,.12);
-        box-shadow: 0 8px 18px rgba(59,130,246,.22);
-      }
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(59,130,246,0.10) 100%);
+  border: 1px solid rgba(110,231,183,0.22);
+}
+.account-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+.account-card-badge {
+  flex-shrink: 0;
+  min-width: 108px;
+  padding: 8px 12px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 0.82rem;
+  font-weight: 800;
+  color: #ecfdf5;
+  background: linear-gradient(135deg, rgba(16,185,129,0.34), rgba(59,130,246,0.18));
+  border: 1px solid rgba(167,243,208,0.26);
+}
+.account-card-main {
+  flex: 1;
+  min-width: 0;
+}
+.account-card-rich h1,
+.account-card-rich h2,
+.account-card-rich h3 {
+  margin: 0 0 6px;
+  line-height: 1.25;
+  color: #fff;
+}
+.account-card-rich h1 { font-size: 1rem; }
+.account-card-rich h2 { font-size: 0.96rem; }
+.account-card-rich h3 { font-size: 0.92rem; }
+.account-card-rich p {
+  margin: 0 0 5px;
+  font-size: 0.86rem;
+  color: rgba(226, 232, 240, 0.92);
+  line-height: 1.5;
+}
+.account-card-rich p:last-child { margin-bottom: 0; }
+.account-card-rich ul { margin: 0 0 6px 18px; padding: 0; }
+.account-card-rich li {
+  margin: 3px 0;
+  font-size: 0.84rem;
+  color: rgba(226,232,240,0.92);
+}
+.account-card-rich code {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+}
+.account-card-rich a {
+  color: #93c5fd;
+  word-break: break-all;
+}
+.account-card-rich .ad-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  margin-bottom: 6px;
+  font-size: .66rem;
+  font-weight: 800;
+  border-radius: 999px;
+  background: rgba(16,185,129,.18);
+  border: 1px solid rgba(16,185,129,.35);
+  color: #d1fae5;
+}
+.account-card-rich .ad-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.82rem;
+  background: linear-gradient(135deg,#3b82f6,#8b5cf6);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 6px 14px rgba(59,130,246,.18);
+}
 
       .promo-card {
         display: flex; align-items: center; gap: 18px; margin-bottom: 30px; padding: 22px 26px; text-decoration: none;
