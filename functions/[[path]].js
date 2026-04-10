@@ -2476,34 +2476,44 @@ class NooMiNav {
   }
 
   function openSettings() {
-    document.getElementById('s_pass').value = SYS_SET.admin_pass || '';
-    document.getElementById('s_title').value = SYS_SET.title || '';
-    document.getElementById('s_sub').value = SYS_SET.subtitle || '';
-    document.getElementById('s_img').value = SYS_SET.img || '';
-    document.getElementById('s_tg').value = SYS_SET.contact_url || '';
-    document.getElementById('s_mail').value = SYS_SET.mail || '';
-    document.getElementById('s_push').value = SYS_SET.push || '';
-    document.getElementById('s_host').value = SYS_SET.host || '';
-    document.getElementById('s_notice').value = SYS_SET.notice || '';
+  try {
+    const $ = function(id) {
+      return document.getElementById(id);
+    };
 
-    document.getElementById('s_promo_enable').checked = String(SYS_SET.promo_enable || '0') === '1';
-    document.getElementById('s_promo_badge').value = SYS_SET.promo_badge || '';
-    document.getElementById('s_promo_title').value = SYS_SET.promo_title || '';
-    document.getElementById('s_promo_desc').value = SYS_SET.promo_desc || '';
-    document.getElementById('s_promo_url').value = SYS_SET.promo_url || '';
-    document.getElementById('s_promo_format').value = SYS_SET.promo_format || 'markdown';
+    if ($('s_pass')) $('s_pass').value = SYS_SET.admin_pass || '';
+    if ($('s_title')) $('s_title').value = SYS_SET.title || '';
+    if ($('s_sub')) $('s_sub').value = SYS_SET.subtitle || '';
+    if ($('s_img')) $('s_img').value = SYS_SET.img || '';
+    if ($('s_tg')) $('s_tg').value = SYS_SET.contact_url || '';
+    if ($('s_mail')) $('s_mail').value = SYS_SET.mail || '';
+    if ($('s_push')) $('s_push').value = SYS_SET.push || '';
+    if ($('s_host')) $('s_host').value = SYS_SET.host || '';
+    if ($('s_notice')) $('s_notice').value = SYS_SET.notice || '';
 
-    document.getElementById('s_account_enable').checked = String(SYS_SET.account_enable || '0') === '1';
-    document.getElementById('s_account_format').value = SYS_SET.account_format || 'markdown';
-    document.getElementById('s_account_content').value = SYS_SET.account_content || '';
+    if ($('s_promo_enable')) $('s_promo_enable').checked = String(SYS_SET.promo_enable || '0') === '1';
+    if ($('s_promo_badge')) $('s_promo_badge').value = SYS_SET.promo_badge || '';
+    if ($('s_promo_title')) $('s_promo_title').value = SYS_SET.promo_title || '';
+    if ($('s_promo_desc')) $('s_promo_desc').value = SYS_SET.promo_desc || '';
+    if ($('s_promo_url')) $('s_promo_url').value = SYS_SET.promo_url || '';
+    if ($('s_promo_format')) $('s_promo_format').value = SYS_SET.promo_format || 'markdown';
 
-    document.getElementById('s_links').value = SYS_SET.links || '[]';
-    document.getElementById('s_friends').value = SYS_SET.friends || '[]';
+    if ($('s_account_enable')) $('s_account_enable').checked = String(SYS_SET.account_enable || '0') === '1';
+    if ($('s_account_format')) $('s_account_format').value = SYS_SET.account_format || 'markdown';
+    if ($('s_account_content')) $('s_account_content').value = SYS_SET.account_content || '';
 
-    document.getElementById('set-fs').classList.add('open');
-    document.getElementById('mask').classList.add('show');
+    if ($('s_links')) $('s_links').value = SYS_SET.links || '[]';
+    if ($('s_friends')) $('s_friends').value = SYS_SET.friends || '[]';
+
+    if ($('set-fs')) $('set-fs').classList.add('open');
+    if ($('mask')) $('mask').classList.add('show');
+
     document.body.style.overflow = 'hidden';
+  } catch (e) {
+    console.error('openSettings error:', e);
+    alert('系统设置打开失败，请按 F12 查看控制台报错');
   }
+}
 
   function formatJsonField(id) {
     const el = document.getElementById(id);
@@ -2611,8 +2621,23 @@ class NooMiNav {
   }
 
   document.addEventListener('keydown', function(e) {
+  if (e.key === 'Escape') cls();
+});
+
+window.toggleAdminTheme = toggleAdminTheme;
+window.openLog = openLog;
+window.openSettings = openSettings;
+window.formatJsonField = formatJsonField;
+window.fillLinksExample = fillLinksExample;
+window.fillFriendsExample = fillFriendsExample;
+window.fillAccountMarkdownExample = fillAccountMarkdownExample;
+window.fillAccountHtmlExample = fillAccountHtmlExample;
+window.saveSettings = saveSettings;
+window.cls = cls;
+  
     if (e.key === 'Escape') cls();
   });
+  
 </script>
       </body></html>`;
 }
