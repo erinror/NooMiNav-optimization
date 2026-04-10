@@ -687,6 +687,20 @@ class NooMiNav {
   const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
   const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
 
+  // 中部推广（免费域名）
+  const promoEnabled = String(this.config.promo_enable || '0') === '1';
+  const promoUrl = this.config.promo_url || '';
+  const promoBadge = this.config.promo_badge || '推广支持';
+  const promoTitle = this.config.promo_title || '推广支持';
+  const promoDesc = this.config.promo_desc || '';
+
+  // 右侧广告（账号购买）
+  const accountEnabled = String(this.config.account_enable || '0') === '1';
+  const accountUrl = this.config.account_url || '';
+  const accountBadge = this.config.account_badge || '账号购买';
+  const accountTitle = this.config.account_title || '账号购买通道';
+  const accountDesc = this.config.account_desc || '稳定 / 快速 / 自动发货';
+
   const cardsHtml = safeLinks.map(item => {
     const itemId = this.escapeAttr(item.id || '');
     const mainUrl = `/go/${itemId}`;
@@ -708,45 +722,32 @@ class NooMiNav {
     noticeHtml = `<div class="glass-card notice-card"><div class="notice-title"><span class="heart-beat">❤️</span> 温馨提示</div><div class="notice-content">${this.config.notice}</div></div>`;
   }
 
+  // 页面中部推广卡（免费域名）
   let promoHtml = '';
-  if (String(this.config.promo_enable) === '1' && this.config.promo_url) {
-    const promoRendered = this.renderRichContent(this.config.promo_desc, this.config.promo_format);
+  if (promoEnabled && promoUrl) {
+    const promoRendered = this.renderRichContent(promoDesc, this.config.promo_format);
     promoHtml = `
-      <a href="${this.escapeAttr(this.config.promo_url)}"
+      <a href="${this.escapeAttr(promoUrl)}"
          target="_blank"
          rel="noopener noreferrer"
          class="glass-card promo-card">
-        <div class="promo-badge">${this.escapeHtml(this.config.promo_badge || '推广支持')}</div>
+        <div class="promo-badge">${this.escapeHtml(promoBadge)}</div>
         <div class="promo-content">
-          <div class="promo-title">${this.escapeHtml(this.config.promo_title || '推广支持')}</div>
+          <div class="promo-title">${this.escapeHtml(promoTitle)}</div>
           <div class="promo-desc rich-content">${promoRendered}</div>
         </div>
       </a>
     `;
   }
 
-  const adLayerHtml = (String(this.config.promo_enable) === '1' && this.config.promo_url) ? `
-    <div id="buyNoticeMask" class="buy-notice-mask">
-      <div class="buy-notice-card" id="buyNoticeCard">
-        <button class="buy-notice-close" id="buyNoticeClose" aria-label="关闭">×</button>
-        <div class="buy-notice-badge">${this.escapeHtml(this.config.promo_badge || '账号购买')}</div>
-        <a href="${this.escapeAttr(this.config.promo_url)}" target="_blank" rel="noopener noreferrer" class="buy-notice-main">
-          <h3>${this.escapeHtml(this.config.promo_title || '账号购买通道')}</h3>
-          <p>${this.escapeHtml((this.config.promo_desc || '').replace(/\n/g, ' ').slice(0, 140))}</p>
-        </a>
-        <div class="buy-notice-actions">
-          <button type="button" id="buyNoticeCloseOnce" class="buy-btn buy-btn-soft">关闭（本次）</button>
-          <button type="button" id="buyNoticeCloseToday" class="buy-btn buy-btn-primary">今日关闭</button>
-        </div>
-      </div>
-    </div>
-
-    <aside id="buySideAd" class="buy-side-ad">
-      <button class="buy-side-close" id="buySideClose" aria-label="关闭">×</button>
-      <a href="${this.escapeAttr(this.config.promo_url)}" target="_blank" rel="noopener noreferrer" class="buy-side-link">
-        <div class="buy-side-badge">${this.escapeHtml(this.config.promo_badge || '推荐')}</div>
-        <div class="buy-side-title">${this.escapeHtml(this.config.promo_title || '账号购买')}</div>
-        <div class="buy-side-desc">稳定 / 快速 / 自动发货</div>
+  // 右侧广告（账号购买）
+  const accountSideHtml = (accountEnabled && accountUrl) ? `
+    <aside id="accountSideAd" class="buy-side-ad">
+      <button class="buy-side-close" id="accountSideClose" aria-label="关闭">×</button>
+      <a href="${this.escapeAttr(accountUrl)}" target="_blank" rel="noopener noreferrer" class="buy-side-link">
+        <div class="buy-side-badge">${this.escapeHtml(accountBadge)}</div>
+        <div class="buy-side-title">${this.escapeHtml(accountTitle)}</div>
+        <div class="buy-side-desc">${this.escapeHtml(accountDesc)}</div>
       </a>
     </aside>
   ` : '';
@@ -760,7 +761,7 @@ class NooMiNav {
       --warning: #fcd34d;
       --primary: #8b5cf6;
       --primary-2: #38bdf8;
-      --backdrop-blur: 14px;
+      --backdrop-blur: 12px;
       --shadow-soft: 0 8px 20px rgba(15,23,42,.14);
       --shadow-hover: 0 14px 28px rgba(15,23,42,.18);
       --transition: .22s ease;
@@ -821,7 +822,7 @@ class NooMiNav {
     .search-box {
       width: 100%; height: 56px; padding: 0 20px 0 48px; border-radius: 18px;
       border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.14);
-      backdrop-filter: blur(8px); color: white; font-size: 1rem;
+      backdrop-filter: blur(6px); color: white; font-size: 1rem;
       box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 14px rgba(0,0,0,0.10);
       transition: var(--transition);
     }
@@ -836,10 +837,10 @@ class NooMiNav {
     }
     .resource-card-wrap {
       display: flex; position: relative; overflow: hidden; min-height: 112px;
-      opacity: 0; transform: translateY(14px); animation: fadeInUp 0.5s forwards;
+      opacity: 1; transform: none; animation: none;
     }
     .resource-card-wrap:hover, .partner-card:hover {
-      background: rgba(255,255,255,0.22); transform: translateY(-3px); box-shadow: var(--shadow-hover);
+      background: rgba(255,255,255,0.22); transform: translateY(-2px); box-shadow: var(--shadow-hover);
     }
     .resource-main-link {
       flex: 1; display: flex; align-items: center; gap: 16px; text-decoration: none;
@@ -871,7 +872,7 @@ class NooMiNav {
     .partner-card {
       text-decoration: none; color: #fff; text-align: center; padding: 16px 14px; font-size: 0.92rem; font-weight: 600;
       border-radius: 16px; text-shadow: 0 1px 3px rgba(0,0,0,0.45); transition: var(--transition); min-height: 68px;
-      display: flex; align-items: center; justify-content: center; opacity: 0; transform: translateY(14px); animation: fadeInUp 0.5s forwards;
+      display: flex; align-items: center; justify-content: center; opacity: 1; transform: none; animation: none;
     }
 
     .fab-container {
@@ -881,7 +882,7 @@ class NooMiNav {
     .fab-btn {
       padding: 11px 18px; border-radius: 16px; text-decoration: none; font-weight: 700; color: white;
       transition: var(--transition); box-shadow: 0 6px 16px rgba(0,0,0,0.16); white-space: nowrap;
-      border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
     }
     .fab-telegram { background: rgba(139,92,246,.66); }
     .fab-mail { background: rgba(59,130,246,.66); }
@@ -890,7 +891,7 @@ class NooMiNav {
 
     .theme-toggle {
       position: fixed; top: 20px; right: 20px; width: 44px; height: 44px; border-radius: 14px;
-      background: rgba(255,255,255,0.16); backdrop-filter: blur(10px); border: 1px solid rgba(255,255,255,0.14);
+      background: rgba(255,255,255,0.16); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.14);
       display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; color: white;
     }
 
@@ -899,7 +900,7 @@ class NooMiNav {
     .notice-card {
       margin-bottom: 22px; padding: 22px 28px; text-align: left;
       background: linear-gradient(135deg, rgba(244, 63, 94, 0.10) 0%, rgba(30, 41, 59, 0.32) 100%);
-      border-left: 4px solid #fb7185; animation: fadeInUp 0.6s forwards; animation-delay: 0.04s;
+      border-left: 4px solid #fb7185;
     }
     .notice-title {
       font-size: 1.1rem; font-weight: 800; background: linear-gradient(to right, #fb7185, #c084fc);
@@ -913,9 +914,8 @@ class NooMiNav {
       display: flex; align-items: center; gap: 18px; margin-bottom: 30px; padding: 22px 26px; text-decoration: none;
       color: var(--text-main); background: linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(59,130,246,0.10) 100%);
       border: 1px solid rgba(125, 211, 252, 0.22); box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
-      animation: fadeInUp 0.6s forwards; animation-delay: 0.06s;
     }
-    .promo-card:hover { transform: translateY(-3px); }
+    .promo-card:hover { transform: translateY(-2px); }
     .promo-badge {
       flex-shrink: 0; min-width: 138px; padding: 12px 16px; border-radius: 999px; text-align: center;
       font-size: 0.95rem; font-weight: 800; color: #dbeafe; background: linear-gradient(135deg, rgba(255,255,255,0.28), rgba(191,219,254,0.18));
@@ -927,68 +927,21 @@ class NooMiNav {
     .rich-content p { margin: 0 0 8px; }
     .rich-content p:last-child { margin-bottom: 0; }
 
-    /* === 新增：公告弹窗 === */
-    .buy-notice-mask{
-      position:fixed; inset:0; z-index:220;
-      background:rgba(2,6,23,.58);
-      display:none; align-items:center; justify-content:center;
-      padding:16px;
-    }
-    .buy-notice-mask.show{ display:flex; }
-    .buy-notice-card{
-      width:min(520px,95vw);
-      background:linear-gradient(135deg, rgba(15,23,42,.96), rgba(30,41,59,.96));
-      border:1px solid rgba(255,255,255,.16);
-      border-radius:18px;
-      padding:20px;
-      color:#fff;
-      box-shadow:0 18px 40px rgba(0,0,0,.35);
-      position:relative;
-    }
-    .buy-notice-close{
-      position:absolute; top:10px; right:10px;
-      width:30px; height:30px; border-radius:999px;
-      border:1px solid rgba(255,255,255,.2);
-      background:rgba(255,255,255,.08); color:#fff; cursor:pointer;
-    }
-    .buy-notice-badge{
-      display:inline-block; padding:4px 10px; border-radius:999px;
-      font-size:.78rem; font-weight:800; margin-bottom:10px;
-      background:rgba(56,189,248,.2); border:1px solid rgba(56,189,248,.35);
-    }
-    .buy-notice-main{
-      text-decoration:none; color:#fff; display:block;
-    }
-    .buy-notice-main h3{ font-size:1.2rem; margin:4px 0 10px; line-height:1.35; }
-    .buy-notice-main p{ font-size:.95rem; opacity:.95; line-height:1.7; }
-    .buy-notice-actions{
-      margin-top:14px;
-      display:flex; gap:10px; justify-content:flex-end; flex-wrap:wrap;
-    }
-    .buy-btn{
-      border:none; cursor:pointer; border-radius:10px; padding:9px 14px; font-weight:800;
-    }
-    .buy-btn-soft{
-      background:rgba(255,255,255,.12); color:#fff; border:1px solid rgba(255,255,255,.2);
-    }
-    .buy-btn-primary{
-      background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:#fff;
-    }
-
-    /* === 新增：右侧广告 === */
+    /* 右侧账号购买广告 */
     .buy-side-ad{
       position:fixed; right:18px; top:50%; transform:translateY(-50%);
       width:220px; z-index:180;
       background:rgba(15,23,42,.82);
       border:1px solid rgba(255,255,255,.16);
       border-radius:14px; padding:12px;
-      backdrop-filter:blur(10px);
+      backdrop-filter:blur(6px);
       box-shadow:0 12px 28px rgba(0,0,0,.25);
     }
     .buy-side-link{ color:#fff; text-decoration:none; display:block; }
     .buy-side-badge{
       display:inline-block; font-size:.72rem; padding:2px 8px; border-radius:999px;
-      background:rgba(16,185,129,.2); border:1px solid rgba(16,185,129,.35); margin-bottom:8px;
+      background:rgba(16,185,129,.2); border:1px solid rgba(16,185,129,.35);
+      margin-bottom:8px;
     }
     .buy-side-title{ font-weight:800; margin-bottom:6px; line-height:1.35; }
     .buy-side-desc{ font-size:.84rem; opacity:.88; }
@@ -997,9 +950,6 @@ class NooMiNav {
       border:0; border-radius:999px; cursor:pointer;
       background:rgba(255,255,255,.1); color:#fff;
     }
-
-    @keyframes beat { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.22); } }
-    @keyframes fadeInUp { to { opacity: 1; transform: translateY(0); } }
 
     @media (max-width: 900px){
       .buy-side-ad{ top:auto; bottom:90px; right:12px; transform:none; width:170px; }
@@ -1024,7 +974,9 @@ class NooMiNav {
       noResult.className = 'no-result';
       noResult.innerHTML = '😕 暂无匹配结果';
       gridResources.after(noResult);
+
       if (!searchBox) return;
+
       let timer = null;
       searchBox.addEventListener('keydown', e => e.key === 'Enter' && e.preventDefault());
       searchBox.addEventListener('input', function(e) {
@@ -1039,20 +991,23 @@ class NooMiNav {
             if (isMatch) hasMatch = true;
           });
           noResult.style.display = searchTerm && !hasMatch ? 'block' : 'none';
-        }, 50);
+        }, 120);
       });
     }
 
     function initThemeToggle() {
       const themeBtn = document.querySelector('.theme-toggle');
       if (!themeBtn) return;
+
       const toggleTheme = () => {
         document.body.classList.toggle('dark-theme');
         const isDark = document.body.classList.contains('dark-theme');
         localStorage.setItem('theme', isDark ? 'dark' : 'light');
         themeBtn.textContent = isDark ? '☀️' : '🌙';
       };
+
       themeBtn.addEventListener('click', toggleTheme);
+
       const savedTheme = localStorage.getItem('theme');
       const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
       if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
@@ -1063,80 +1018,40 @@ class NooMiNav {
       }
     }
 
-    function initAnimation() {
-      const baseDelay = 0.05;
-      const resources = document.querySelectorAll('.resource-card-wrap');
-      resources.forEach((card, i) => card.style.animationDelay = \`\${i * baseDelay}s\`);
-      const friends = document.querySelectorAll('.partner-card');
-      friends.forEach((card, i) => card.style.animationDelay = \`\${(resources.length + i) * baseDelay}s\`);
-    }
+    // 仅右侧账号广告（本次关闭）
+    function initSideAccountAd() {
+      const side = document.getElementById('accountSideAd');
+      const sideClose = document.getElementById('accountSideClose');
+      const keySideSession = 'dismiss_account_side_session_v1';
 
-    function initPromoAds() {
-      const VER = 'buy_ad_v2';
-      const today = new Date().toISOString().slice(0,10);
+      if (!side) return;
 
-      const keyToday = 'dismiss_notice_today_' + VER;      // 今日关闭
-      const keySession = 'dismiss_notice_session_' + VER;  // 本次关闭
-      const keySideSession = 'dismiss_side_session_' + VER;
-
-      const mask = document.getElementById('buyNoticeMask');
-      const closeX = document.getElementById('buyNoticeClose');
-      const closeOnce = document.getElementById('buyNoticeCloseOnce');
-      const closeToday = document.getElementById('buyNoticeCloseToday');
-
-      const side = document.getElementById('buySideAd');
-      const sideClose = document.getElementById('buySideClose');
-
-      if (mask) {
-        const dismissedToday = localStorage.getItem(keyToday) === today;
-        const dismissedSession = sessionStorage.getItem(keySession) === '1';
-        if (!dismissedToday && !dismissedSession) {
-          mask.classList.add('show');
-        }
-
-        const closeOnceFn = () => {
-          mask.classList.remove('show');
-          sessionStorage.setItem(keySession, '1');
-        };
-        const closeTodayFn = () => {
-          mask.classList.remove('show');
-          localStorage.setItem(keyToday, today);
-          sessionStorage.setItem(keySession, '1');
-        };
-
-        mask.addEventListener('click', (e) => {
-          if (e.target === mask) closeOnceFn(); // 点空白：本次关闭
-        });
-        if (closeX) closeX.addEventListener('click', closeOnceFn);       // X：本次关闭
-        if (closeOnce) closeOnce.addEventListener('click', closeOnceFn); // 按钮：本次关闭
-        if (closeToday) closeToday.addEventListener('click', closeTodayFn); // 按钮：今日关闭
+      if (sessionStorage.getItem(keySideSession) === '1') {
+        side.style.display = 'none';
       }
 
-      if (side) {
-        if (sessionStorage.getItem(keySideSession) === '1') {
+      if (sideClose) {
+        sideClose.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
           side.style.display = 'none';
-        }
-        if (sideClose) {
-          sideClose.addEventListener('click', (e) => {
-            e.preventDefault();
-            e.stopPropagation();
-            side.style.display = 'none';
-            sessionStorage.setItem(keySideSession, '1'); // 右侧广告：仅本次关闭
-          });
-        }
+          sessionStorage.setItem(keySideSession, '1');
+        });
       }
     }
 
     document.addEventListener('DOMContentLoaded', () => {
       initSearch();
       initThemeToggle();
-      initAnimation();
-      initPromoAds();
+      initSideAccountAd();
     });
   </script></head><body>
     <button class="theme-toggle" title="切换主题">🌙</button>
     <div class="container">
-      <div class="header glass-card"><h1>${this.escapeHtml(this.config.title)}</h1><p>${this.escapeHtml(this.config.subtitle)}</p></div>
+      <div class="header glass-card">
+        <h1>${this.escapeHtml(this.config.title)}</h1>
+        <p>${this.escapeHtml(this.config.subtitle)}</p>
+      </div>
 
       <div class="search-container">
         <div class="search-wrap">
@@ -1150,1342 +1065,1428 @@ class NooMiNav {
 
       <div class="section-title">💎 精选</div>
       <div class="grid-resources">${cardsHtml}</div>
+
       <div class="section-title">🔗 友链</div>
       <div class="grid-partners">${friendsHtml}</div>
     </div>
 
     ${fabHtml}
-    ${adLayerHtml}
+    ${accountSideHtml}
     ${this.render_BgRuntimeScript()}
   </body></html>`;
 }
 
   render_AdminDashboard(dbData, m) {
-    const { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode } = dbData;
-    const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
-    const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
-    const activeIds = new Set([...safeLinks.map(i => i.id), ...safeFriends.map(i => i.id)]);
+  const { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode } = dbData;
+  const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
+  const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
+  const activeIds = new Set([...safeLinks.map(i => i.id), ...safeFriends.map(i => i.id)]);
 
-    let historyTotal = 0;
-    for (let v of statsMap.values()) {
-      if (activeIds.has(v.id)) historyTotal += (v.total_clicks || 0);
-    }
+  let historyTotal = 0;
+  for (let v of statsMap.values()) {
+    if (activeIds.has(v.id)) historyTotal += (v.total_clicks || 0);
+  }
 
-    let viewTotalDenominator = 0;
+  let viewTotalDenominator = 0;
+  if (isDayMode) {
+    for (let c of monthContextMap.values()) viewTotalDenominator += c;
+  } else {
+    for (let c of periodMap.values()) viewTotalDenominator += c;
+  }
+
+  let prevDay = m, nextDay = m, prevMonthStr = "", nextMonthStr = "";
+  try {
     if (isDayMode) {
-      for (let c of monthContextMap.values()) viewTotalDenominator += c;
+      const d = new Date(m);
+      d.setDate(d.getDate() - 1);
+      prevDay = d.toISOString().split('T')[0];
+      d.setDate(d.getDate() + 2);
+      nextDay = d.toISOString().split('T')[0];
+    }
+    const currentY_int = parseInt(m.substring(0, 4)), currentM_int = parseInt(m.substring(5, 7));
+    let prevM_Y = currentY_int, prevM_M = currentM_int - 1;
+    if (prevM_M === 0) { prevM_Y -= 1; prevM_M = 12; }
+    prevMonthStr = `${prevM_Y}_${String(prevM_M).padStart(2, '0')}`;
+    let nextM_Y = currentY_int, nextM_M = currentM_int + 1;
+    if (nextM_M === 13) { nextM_Y += 1; nextM_M = 1; }
+    nextMonthStr = `${nextM_Y}_${String(nextM_M).padStart(2, '0')}`;
+  } catch (e) {}
+
+  const buildCard = (id, name, emoji, isMini) => {
+    const stat = statsMap.get(id) || { total_clicks: 0, last_time: '' };
+    const realTodayVal = dailyMap.get(id) || 0;
+    const selectedTargetVal = periodMap.get(id) || 0;
+    const monthContextVal = monthContextMap.get(id) || 0;
+    let col2Label, col2Val, col3Label, col3Val, progressVal = 0;
+
+    if (isDayMode) {
+      col2Label = (m === this.time.todayStr) ? "今日" : "当日";
+      col2Val = selectedTargetVal;
+      col3Label = "当月";
+      col3Val = monthContextVal;
+      progressVal = viewTotalDenominator > 0 ? ((monthContextVal / viewTotalDenominator) * 100).toFixed(1) : 0;
     } else {
-      for (let c of periodMap.values()) viewTotalDenominator += c;
+      col2Label = "今日";
+      col2Val = realTodayVal;
+      col3Label = (m === this.time.dateKey) ? "本月" : "当月";
+      col3Val = selectedTargetVal;
+      progressVal = viewTotalDenominator > 0 ? ((selectedTargetVal / viewTotalDenominator) * 100).toFixed(1) : 0;
     }
 
-    let prevDay = m, nextDay = m, prevMonthStr = "", nextMonthStr = "";
-    try {
+    let timeDisplay = stat.last_time || '暂无';
+    let timeIcon = '🕒';
+    if (timeDisplay !== '暂无') {
       if (isDayMode) {
-        const d = new Date(m);
-        d.setDate(d.getDate() - 1);
-        prevDay = d.toISOString().split('T')[0];
-        d.setDate(d.getDate() + 2);
-        nextDay = d.toISOString().split('T')[0];
-      }
-      const currentY_int = parseInt(m.substring(0, 4)), currentM_int = parseInt(m.substring(5, 7));
-      let prevM_Y = currentY_int, prevM_M = currentM_int - 1;
-      if (prevM_M === 0) { prevM_Y -= 1; prevM_M = 12; }
-      prevMonthStr = `${prevM_Y}_${String(prevM_M).padStart(2, '0')}`;
-      let nextM_Y = currentY_int, nextM_M = currentM_int + 1;
-      if (nextM_M === 13) { nextM_Y += 1; nextM_M = 1; }
-      nextMonthStr = `${nextM_Y}_${String(nextM_M).padStart(2, '0')}`;
-    } catch (e) {}
-
-    const buildCard = (id, name, emoji, isMini) => {
-      const stat = statsMap.get(id) || { total_clicks: 0, last_time: '' };
-      const realTodayVal = dailyMap.get(id) || 0;
-      const selectedTargetVal = periodMap.get(id) || 0;
-      const monthContextVal = monthContextMap.get(id) || 0;
-      let col2Label, col2Val, col3Label, col3Val, progressVal = 0;
-
-      if (isDayMode) {
-        col2Label = (m === this.time.todayStr) ? "今日" : "当日";
-        col2Val = selectedTargetVal;
-        col3Label = "当月";
-        col3Val = monthContextVal;
-        progressVal = viewTotalDenominator > 0 ? ((monthContextVal / viewTotalDenominator) * 100).toFixed(1) : 0;
+        timeDisplay = timeDisplay.split(' ')[1] || timeDisplay;
       } else {
-        col2Label = "今日";
-        col2Val = realTodayVal;
-        col3Label = (m === this.time.dateKey) ? "本月" : "当月";
-        col3Val = selectedTargetVal;
-        progressVal = viewTotalDenominator > 0 ? ((selectedTargetVal / viewTotalDenominator) * 100).toFixed(1) : 0;
+        timeDisplay = timeDisplay.split(' ')[0].substring(5);
+        timeIcon = '📅';
       }
-
-      let timeDisplay = stat.last_time || '暂无';
-      let timeIcon = '🕒';
-      if (timeDisplay !== '暂无') {
-        if (isDayMode) {
-          timeDisplay = timeDisplay.split(' ')[1] || timeDisplay;
-        } else {
-          timeDisplay = timeDisplay.split(' ')[0].substring(5);
-          timeIcon = '📅';
-        }
-      }
-
-      // ✅ 修复：onclick 注入风险
-      const safeId = this.escapeAttr(id || '');
-      const safeM = this.escapeAttr(m || '');
-      const safeName = this.escapeHtml(name || '');
-      const encodedName = encodeURIComponent(name || '');
-
-      if (isMini) {
-        return `<div class="mini-card" onclick="openLog('${safeId}','${safeM}','${encodedName}')">
-                  <div class="mini-top">
-                    <span class="mini-name" title="${safeName}">${safeName}</span>
-                    <span class="mini-badge">${selectedTargetVal}</span>
-                  </div>
-                  <div class="mini-meta">${this.escapeHtml(timeDisplay)}</div>
-                </div>`;
-      }
-
-      return `<div class="stat-card" onclick="openLog('${safeId}','${safeM}','${encodedName}')">
-              <div class="stat-top">
-                <div class="stat-title-wrap">
-                  <span class="stat-emoji">${this.escapeHtml(emoji || '🔗')}</span>
-                  <span class="stat-title">${safeName}</span>
-                </div>
-                <span class="stat-pct">${progressVal}%</span>
-              </div>
-              <div class="stat-metrics">
-                <div class="metric">
-                  <span class="metric-label">历史</span>
-                  <span class="metric-value">${stat.total_clicks || 0}</span>
-                </div>
-                <div class="metric">
-                  <span class="metric-label">${col2Label}</span>
-                  <span class="metric-value metric-gold">${col2Val}</span>
-                </div>
-                <div class="metric">
-                  <span class="metric-label">${col3Label}</span>
-                  <span class="metric-value metric-blue">${col3Val}</span>
-                </div>
-              </div>
-              <div class="progress"><div style="width:${progressVal}%"></div></div>
-              <div class="stat-foot">${timeIcon} ${this.escapeHtml(timeDisplay)}</div>
-            </div>`;
-    };
-
-    const linkHtml = safeLinks.map(i => buildCard(i.id, i.name, i.emoji, false)).join('');
-    const friendHtml = safeFriends.map(i => buildCard(i.id, i.name, '', true)).join('');
-
-    const sysSettings = {
-      admin_pass: this.config.admin_pass,
-      title: this.config.title,
-      subtitle: this.config.subtitle,
-      img: this.dbSettings.img || this.env.img || "",
-      contact_url: this.config.contact_url,
-      mail: this.config.mail,
-      push: this.dbSettings.push || this.env.push || "",
-      host: this.dbSettings.host || this.env.host || "",
-      notice: this.config.notice,
-
-      promo_enable: this.config.promo_enable,
-      promo_badge: this.config.promo_badge,
-      promo_title: this.config.promo_title,
-      promo_desc: this.config.promo_desc,
-      promo_url: this.config.promo_url,
-      promo_format: this.config.promo_format,
-
-      links: JSON.stringify(this.LINKS_DATA, null, 2),
-      friends: JSON.stringify(this.FRIENDS_DATA, null, 2)
-    };
-
-    let noticeHtmlPreview = '';
-    if (this.config.notice && this.config.notice.trim() !== '') {
-      noticeHtmlPreview = `<div class="panel notice-panel"><div class="panel-head"><span>❤️</span><strong>公告预览</strong></div><div class="notice-preview">${this.config.notice}</div></div>`;
     }
 
-    const promoPreview = String(this.config.promo_enable) === '1'
-      ? `<div class="panel notice-panel"><div class="panel-head"><span>📣</span><strong>推广卡预览</strong></div><div class="promo-preview-box"><div class="promo-preview-badge">${this.escapeHtml(this.config.promo_badge || '推广支持')}</div><div class="promo-preview-main"><div class="promo-preview-title">${this.escapeHtml(this.config.promo_title || '推广支持')}</div><div class="promo-preview-desc">${this.renderRichContent(this.config.promo_desc || '', this.config.promo_format)}</div></div></div></div>`
-      : '';
+    const safeId = this.escapeAttr(id || '');
+    const safeM = this.escapeAttr(m || '');
+    const safeName = this.escapeHtml(name || '');
+    const encodedName = encodeURIComponent(name || '');
 
-    // （下面后台 HTML/CSS/JS 与你原版保持，仅修 openLog 解码）
-    return `<!DOCTYPE html><html lang="zh-CN"><head>${this.render_Head(this.config.title)}<style>
-        :root{
-          --bg-card:rgba(15,23,42,0.70);
-          --bg-card-soft:rgba(15,23,42,0.58);
-          --bg-elev:rgba(255,255,255,0.05);
-          --bd:rgba(255,255,255,0.10);
-          --bd-strong:rgba(255,255,255,0.16);
-          --txt:#f8fafc;
-          --txt-sub:#94a3b8;
-          --txt-soft:#cbd5e1;
-          --blue:#38bdf8;
-          --violet:#8b5cf6;
-          --gold:#fbbf24;
-          --green:#34d399;
-          --red:#f87171;
-          --shadow:0 10px 28px rgba(2,6,23,0.18);
-          --shadow-soft:0 4px 14px rgba(2,6,23,0.12);
-        }
-        .light-theme{
-          --bg-card:rgba(255,255,255,0.92);
-          --bg-card-soft:rgba(255,255,255,0.84);
-          --bg-elev:rgba(15,23,42,0.04);
-          --bd:rgba(15,23,42,0.08);
-          --bd-strong:rgba(15,23,42,0.12);
-          --txt:#0f172a;
-          --txt-sub:#475569;
-          --txt-soft:#64748b;
-          --shadow:0 10px 24px rgba(15,23,42,0.08);
-          --shadow-soft:0 4px 12px rgba(15,23,42,0.06);
-        }
-        *{box-sizing:border-box}
-        html{scroll-behavior:smooth}
-        body{
-          color:var(--txt);
-          ${this.getBgShellStyle()}
-          padding:24px;
-          display:block;
-          margin:0;
-        }
-        .admin-shell{ width:min(1320px,100%); margin:0 auto; }
-
-        .theme-toggle{
-          position:fixed;
-          top:18px;
-          left:18px;
-          width:42px;
-          height:42px;
-          border-radius:14px;
-          border:1px solid var(--bd);
-          background:var(--bg-card-soft);
-          color:var(--txt);
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          cursor:pointer;
-          z-index:120;
-          backdrop-filter:blur(10px);
-          box-shadow:var(--shadow-soft);
-        }
-
-        .topbar{
-          background:var(--bg-card);
-          border:1px solid var(--bd);
-          border-radius:28px;
-          backdrop-filter:blur(14px);
-          box-shadow:var(--shadow);
-          padding:28px;
-          display:grid;
-          grid-template-columns:1.4fr 1fr;
-          gap:22px;
-          margin-bottom:20px;
-        }
-        .hero-title{
-          font-size:clamp(1.9rem,4vw,2.8rem);
-          line-height:1.08;
-          letter-spacing:-0.04em;
-          margin:0 0 10px;
-          font-weight:900;
-        }
-        .hero-sub{
-          color:var(--txt-soft);
-          line-height:1.7;
-          font-size:.98rem;
-          max-width:760px;
-        }
-        .hero-tags{
-          margin-top:18px;
-          display:flex;
-          gap:10px;
-          flex-wrap:wrap;
-        }
-        .pill{
-          display:inline-flex;
-          align-items:center;
-          gap:8px;
-          padding:8px 12px;
-          border-radius:999px;
-          background:var(--bg-elev);
-          border:1px solid var(--bd);
-          color:var(--txt-soft);
-          font-size:.84rem;
-          font-weight:700;
-        }
-
-        .top-actions{
-          display:flex;
-          flex-direction:column;
-          justify-content:space-between;
-          gap:16px;
-        }
-        .quick-stats{
-          display:grid;
-          grid-template-columns:repeat(3,1fr);
-          gap:12px;
-        }
-        .quick-card{
-          background:var(--bg-elev);
-          border:1px solid var(--bd);
-          border-radius:18px;
-          padding:16px;
-          min-height:92px;
-          display:flex;
-          flex-direction:column;
-          justify-content:space-between;
-        }
-        .quick-label{
-          color:var(--txt-sub);
-          font-size:.82rem;
-          font-weight:700;
-          letter-spacing:.03em;
-        }
-        .quick-value{
-          font-size:1.76rem;
-          font-weight:900;
-          line-height:1;
-        }
-
-        .action-row{
-          display:flex;
-          gap:12px;
-          flex-wrap:wrap;
-          justify-content:flex-end;
-          align-items:center;
-        }
-        .action-btn{
-          appearance:none;
-          border:none;
-          text-decoration:none;
-          cursor:pointer;
-          padding:11px 15px;
-          border-radius:14px;
-          font-weight:800;
-          font-size:.92rem;
-          transition:.18s ease;
-          display:inline-flex;
-          align-items:center;
-          justify-content:center;
-          gap:8px;
-          box-shadow:var(--shadow-soft);
-        }
-        .action-btn:hover{ transform:translateY(-1px); }
-        .action-primary{ background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:#fff; }
-        .action-soft{ background:var(--bg-elev); color:var(--txt); border:1px solid var(--bd); }
-        .action-danger{ background:rgba(248,113,113,.14); color:var(--red); border:1px solid rgba(248,113,113,.18); }
-
-        .toolbar{
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:14px;
-          padding:14px 16px;
-          background:var(--bg-card-soft);
-          border:1px solid var(--bd);
-          border-radius:20px;
-          backdrop-filter:blur(12px);
-          box-shadow:var(--shadow-soft);
-          margin-bottom:20px;
-          flex-wrap:wrap;
-        }
-        .toolbar-left,.toolbar-right{
-          display:flex;
-          align-items:center;
-          gap:10px;
-          flex-wrap:wrap;
-        }
-        .tbtn{
-          text-decoration:none;
-          color:var(--txt);
-          background:var(--bg-elev);
-          border:1px solid var(--bd);
-          padding:10px 14px;
-          border-radius:12px;
-          font-size:.9rem;
-          font-weight:800;
-          transition:.16s ease;
-        }
-        .tbtn:hover,.tbtn.active{
-          background:rgba(56,189,248,.14);
-          border-color:rgba(56,189,248,.24);
-          color:#7dd3fc;
-        }
-        .date-chip{
-          display:flex;
-          align-items:center;
-          gap:10px;
-          padding:10px 14px;
-          border-radius:14px;
-          border:1px solid var(--bd);
-          background:var(--bg-elev);
-          position:relative;
-          overflow:hidden;
-        }
-        .date-chip strong{
-          font-family:monospace;
-          font-size:1rem;
-          letter-spacing:.02em;
-        }
-        .date-chip input[type="date"]{
-          position:absolute;
-          inset:0;
-          opacity:0;
-          cursor:pointer;
-        }
-
-        .grid-main{ display:grid; grid-template-columns:1fr; gap:20px; }
-        .panel{
-          background:var(--bg-card);
-          border:1px solid var(--bd);
-          border-radius:24px;
-          backdrop-filter:blur(14px);
-          box-shadow:var(--shadow);
-          padding:20px;
-        }
-        .panel-header{
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:12px;
-          margin-bottom:18px;
-          flex-wrap:wrap;
-        }
-        .panel-title{
-          margin:0;
-          font-size:1rem;
-          letter-spacing:.04em;
-          text-transform:uppercase;
-          color:#7dd3fc;
-          font-weight:900;
-        }
-        .panel-sub{
-          color:var(--txt-sub);
-          font-size:.86rem;
-        }
-
-        .stats-grid{
-          display:grid;
-          grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
-          gap:16px;
-        }
-        .stat-card{
-          border-radius:20px;
-          border:1px solid var(--bd);
-          background:linear-gradient(180deg,var(--bg-elev),rgba(255,255,255,0.02));
-          padding:18px;
-          cursor:pointer;
-          transition:.16s ease;
-          min-height:166px;
-          content-visibility:auto;
-          contain-intrinsic-size:166px;
-        }
-        .stat-card:hover{
-          transform:translateY(-2px);
-          border-color:rgba(56,189,248,.24);
-          box-shadow:0 10px 24px rgba(2,6,23,0.12);
-        }
-        .stat-top{
-          display:flex;
-          align-items:flex-start;
-          justify-content:space-between;
-          gap:12px;
-          margin-bottom:16px;
-        }
-        .stat-title-wrap{
-          display:flex;
-          align-items:center;
-          gap:12px;
-          min-width:0;
-          flex:1;
-        }
-        .stat-emoji{
-          width:42px;
-          height:42px;
-          border-radius:14px;
-          display:flex;
-          align-items:center;
-          justify-content:center;
-          background:rgba(255,255,255,.06);
-          border:1px solid var(--bd);
-          flex-shrink:0;
-          font-size:1.3rem;
-        }
-        .stat-title{
-          font-size:1rem;
-          font-weight:800;
-          white-space:nowrap;
-          overflow:hidden;
-          text-overflow:ellipsis;
-        }
-        .stat-pct{
-          flex-shrink:0;
-          padding:6px 10px;
-          border-radius:999px;
-          background:rgba(56,189,248,.12);
-          color:#7dd3fc;
-          font-weight:900;
-          font-size:.82rem;
-          border:1px solid rgba(56,189,248,.16);
-        }
-
-        .stat-metrics{
-          display:grid;
-          grid-template-columns:repeat(3,1fr);
-          gap:10px;
-          margin-bottom:14px;
-        }
-        .metric{
-          background:rgba(255,255,255,.02);
-          border:1px solid var(--bd);
-          border-radius:14px;
-          padding:12px 10px;
-          text-align:center;
-        }
-        .metric-label{
-          display:block;
-          font-size:.74rem;
-          color:var(--txt-sub);
-          margin-bottom:5px;
-          font-weight:700;
-        }
-        .metric-value{
-          font-size:1.05rem;
-          font-weight:900;
-          color:var(--txt);
-        }
-        .metric-gold{ color:var(--gold); }
-        .metric-blue{ color:var(--blue); }
-
-        .progress{
-          height:8px;
-          border-radius:999px;
-          background:rgba(255,255,255,.06);
-          overflow:hidden;
-          margin-bottom:12px;
-        }
-        .progress div{
-          height:100%;
-          border-radius:999px;
-          background:linear-gradient(90deg,#fbbf24,#38bdf8,#8b5cf6);
-        }
-        .stat-foot{
-          color:var(--txt-sub);
-          font-size:.82rem;
-          font-family:monospace;
-          text-align:right;
-        }
-
-        .mini-grid{
-          display:grid;
-          grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
-          gap:12px;
-        }
-        .mini-card{
-          background:linear-gradient(180deg,var(--bg-elev),rgba(255,255,255,0.02));
-          border:1px solid var(--bd);
-          border-radius:18px;
-          padding:14px;
-          cursor:pointer;
-          transition:.16s ease;
-          content-visibility:auto;
-          contain-intrinsic-size:90px;
-        }
-        .mini-card:hover{
-          transform:translateY(-2px);
-          border-color:rgba(56,189,248,.24);
-        }
-        .mini-top{
-          display:flex;
-          align-items:center;
-          gap:8px;
-          justify-content:space-between;
-          margin-bottom:12px;
-        }
-        .mini-name{
-          min-width:0;
-          flex:1;
-          white-space:nowrap;
-          overflow:hidden;
-          text-overflow:ellipsis;
-          font-weight:800;
-        }
-        .mini-badge{
-          flex-shrink:0;
-          border-radius:999px;
-          padding:4px 8px;
-          background:rgba(56,189,248,.12);
-          border:1px solid rgba(56,189,248,.16);
-          color:#7dd3fc;
-          font-weight:900;
-          font-size:.78rem;
-        }
-        .mini-meta{
-          text-align:right;
-          color:var(--txt-sub);
-          font-family:monospace;
-          font-size:.78rem;
-        }
-
-        .notice-panel{ padding:18px 20px; }
-        .panel-head{
-          display:flex;
-          align-items:center;
-          gap:10px;
-          margin-bottom:12px;
-          color:#fda4af;
-          font-weight:900;
-        }
-        .notice-preview{
-          color:var(--txt-soft);
-          line-height:1.8;
-          font-size:.94rem;
-        }
-
-        .promo-preview-box{
-          display:flex;
-          gap:16px;
-          align-items:flex-start;
-          padding:14px;
-          border-radius:18px;
-          background:linear-gradient(135deg, rgba(255,255,255,0.08), rgba(59,130,246,0.06));
-          border:1px solid var(--bd);
-        }
-        .promo-preview-badge{
-          min-width:130px;
-          padding:10px 14px;
-          border-radius:999px;
-          text-align:center;
-          background:rgba(255,255,255,0.08);
-          border:1px solid var(--bd);
-          font-weight:800;
-          color:#dbeafe;
-        }
-        .promo-preview-main{ flex:1; min-width:0; }
-        .promo-preview-title{
-          font-weight:900;
-          margin-bottom:8px;
-        }
-        .promo-preview-desc{
-          color:var(--txt-soft);
-          line-height:1.75;
-          font-size:.93rem;
-        }
-        .promo-preview-desc p{ margin:0 0 8px; }
-        .promo-preview-desc p:last-child{ margin-bottom:0; }
-        .promo-preview-desc ul{ margin:4px 0 0 18px; padding:0; }
-        .promo-preview-desc li{ margin:4px 0; }
-        .promo-preview-desc code{
-          padding:2px 6px;
-          border-radius:8px;
-          background:rgba(255,255,255,.06);
-          border:1px solid var(--bd);
-          font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
-        }
-        .promo-preview-desc a{ color:#93c5fd; }
-
-        .mask{
-          position:fixed;
-          inset:0;
-          background:rgba(2,6,23,.44);
-          z-index:140;
-          opacity:0;
-          pointer-events:none;
-          transition:.16s ease;
-        }
-        .mask.show{
-          opacity:1;
-          pointer-events:auto;
-        }
-
-        .drawer{
-          position:fixed;
-          top:0;
-          right:-440px;
-          width:400px;
-          max-width:100vw;
-          height:100vh;
-          z-index:150;
-          transition:.18s ease;
-          background:var(--bg-card);
-          border-left:1px solid var(--bd);
-          backdrop-filter:blur(14px);
-          box-shadow:-12px 0 24px rgba(2,6,23,.16);
-          display:flex;
-          flex-direction:column;
-        }
-        .drawer.open{ right:0; }
-        .drawer-head{
-          padding:18px;
-          border-bottom:1px solid var(--bd);
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:12px;
-        }
-        .drawer-title{
-          margin:0;
-          font-size:1.05rem;
-          font-weight:900;
-        }
-        .icon-btn{
-          width:36px;
-          height:36px;
-          border:none;
-          border-radius:12px;
-          cursor:pointer;
-          background:var(--bg-elev);
-          color:var(--txt);
-          border:1px solid var(--bd);
-          font-size:1.1rem;
-        }
-        .log-list{
-          flex:1;
-          overflow:auto;
-          padding:14px;
-          margin:0;
-          list-style:none;
-          display:flex;
-          flex-direction:column;
-          gap:10px;
-        }
-        .log-item{
-          padding:14px;
-          border-radius:16px;
-          border:1px solid var(--bd);
-          background:rgba(255,255,255,.02);
-        }
-        .log-row{
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:10px;
-          margin-bottom:8px;
-        }
-        .log-index{ color:#7dd3fc; font-weight:900; }
-        .log-time{ color:var(--txt); font-size:.86rem; }
-        .log-meta{
-          display:flex;
-          justify-content:space-between;
-          gap:10px;
-          flex-wrap:wrap;
-          font-family:monospace;
-          color:var(--txt-sub);
-          font-size:.76rem;
-        }
-
-        .fs-modal{
-          position:fixed;
-          inset:0;
-          background:rgba(2,6,23,.58);
-          z-index:160;
-          display:none;
-          overflow:auto;
-        }
-        .fs-modal.open{ display:block; }
-        .settings-wrap{
-          width:min(1180px,calc(100% - 24px));
-          margin:18px auto;
-          background:var(--bg-card);
-          border:1px solid var(--bd);
-          border-radius:28px;
-          box-shadow:var(--shadow);
-          overflow:hidden;
-        }
-        .settings-head{
-          padding:20px 22px;
-          border-bottom:1px solid var(--bd);
-          display:flex;
-          align-items:center;
-          justify-content:space-between;
-          gap:14px;
-          flex-wrap:wrap;
-          position:sticky;
-          top:0;
-          background:var(--bg-card);
-          z-index:2;
-        }
-        .settings-title{
-          margin:0;
-          font-size:1.22rem;
-          font-weight:900;
-        }
-        .settings-sub{
-          color:var(--txt-sub);
-          font-size:.9rem;
-          margin-top:6px;
-        }
-        .settings-actions{
-          display:flex;
-          gap:10px;
-          flex-wrap:wrap;
-        }
-        .settings-body{ padding:22px; }
-        .settings-grid{
-          display:grid;
-          grid-template-columns:repeat(2,1fr);
-          gap:16px;
-        }
-        .full{ grid-column:1 / -1; }
-
-        .field{
-          background:rgba(255,255,255,.02);
-          border:1px solid var(--bd);
-          border-radius:18px;
-          padding:16px;
-        }
-        .field label{
-          display:block;
-          font-size:.88rem;
-          color:var(--txt-sub);
-          margin-bottom:10px;
-          font-weight:800;
-        }
-        .field small{
-          display:block;
-          color:var(--txt-sub);
-          font-size:.78rem;
-          margin-top:8px;
-          line-height:1.6;
-        }
-        .field input,.field textarea,.field select{
-          width:100%;
-          border-radius:14px;
-          border:1px solid var(--bd-strong);
-          background:rgba(2,6,23,.18);
-          color:var(--txt);
-          padding:14px;
-          font-size:.95rem;
-          font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;
-          outline:none;
-          transition:.16s ease;
-        }
-        .light-theme .field input,
-        .light-theme .field textarea,
-        .light-theme .field select{
-          background:#fff;
-        }
-        .field input:focus,.field textarea:focus,.field select:focus{
-          border-color:rgba(56,189,248,.42);
-          box-shadow:0 0 0 4px rgba(56,189,248,.10);
-        }
-        .field textarea{
-          min-height:130px;
-          resize:vertical;
-          line-height:1.55;
-          white-space:pre;
-        }
-        .field textarea.code{ min-height:250px; }
-
-        .field-tools{
-          display:flex;
-          gap:8px;
-          flex-wrap:wrap;
-          margin-bottom:10px;
-        }
-        .mini-btn{
-          appearance:none;
-          border:none;
-          cursor:pointer;
-          padding:8px 12px;
-          border-radius:12px;
-          font-weight:800;
-          font-size:.82rem;
-          background:var(--bg-elev);
-          color:var(--txt);
-          border:1px solid var(--bd);
-          transition:.16s ease;
-        }
-        .mini-btn:hover{ background:rgba(56,189,248,.12); border-color:rgba(56,189,248,.22); color:#7dd3fc; }
-
-        .switch-row{
-          display:flex;
-          align-items:center;
-          gap:12px;
-          flex-wrap:wrap;
-        }
-        .switch{
-          position:relative;
-          width:52px;
-          height:30px;
-          display:inline-block;
-        }
-        .switch input{ display:none; }
-        .slider{
-          position:absolute;
-          inset:0;
-          background:rgba(255,255,255,.10);
-          border:1px solid var(--bd);
-          border-radius:999px;
-          transition:.18s ease;
-        }
-        .slider:before{
-          content:'';
-          position:absolute;
-          width:22px;
-          height:22px;
-          left:3px;
-          top:3px;
-          background:#fff;
-          border-radius:50%;
-          transition:.18s ease;
-          box-shadow:0 2px 8px rgba(0,0,0,.18);
-        }
-        .switch input:checked + .slider{
-          background:rgba(56,189,248,.26);
-          border-color:rgba(56,189,248,.28);
-        }
-        .switch input:checked + .slider:before{
-          transform:translateX(22px);
-        }
-
-        @media (max-width: 1024px){
-          .topbar{ grid-template-columns:1fr; }
-        }
-        @media (max-width: 768px){
-          body{ padding:16px; }
-          .quick-stats{ grid-template-columns:1fr; }
-          .action-row{ justify-content:flex-start; }
-          .toolbar{ padding:14px; }
-          .stats-grid{ grid-template-columns:1fr; }
-          .settings-grid{ grid-template-columns:1fr; }
-          .drawer{ width:100%; right:-100%; }
-          .settings-wrap{ width:calc(100% - 10px); margin:5px auto; border-radius:20px; }
-          .settings-head,.settings-body{ padding:16px; }
-          .promo-preview-box{ flex-direction:column; }
-          .promo-preview-badge{ min-width:auto; width:fit-content; }
-        }
-        </style></head>
-        <body>
-          <button class="theme-toggle" onclick="toggleAdminTheme()" title="切换主题">☀️</button>
-
-          <div class="admin-shell">
-            <section class="topbar">
-              <div>
-                <h1 class="hero-title">📊 数据看板</h1>
-                <div class="hero-sub">
-                  当前查看维度：<strong style="color:var(--txt)">${this.escapeHtml(m)}</strong>。你可以在这里查看精选资源与友链的点击情况、快速预览公告与推广卡内容，并直接进入系统配置面板修改站点设置。
+    if (isMini) {
+      return `<div class="mini-card" onclick="openLog('${safeId}','${safeM}','${encodedName}')">
+                <div class="mini-top">
+                  <span class="mini-name" title="${safeName}">${safeName}</span>
+                  <span class="mini-badge">${selectedTargetVal}</span>
                 </div>
-                <div class="hero-tags">
-                  <span class="pill">🧭 路径：${this.escapeHtml(this.ADMIN_PATH)}</span>
-                  <span class="pill">🕒 时间：${this.escapeHtml(this.time.fullStr)}</span>
-                  <span class="pill">📦 历史总计：${historyTotal}</span>
-                </div>
+                <div class="mini-meta">${this.escapeHtml(timeDisplay)}</div>
+              </div>`;
+    }
+
+    return `<div class="stat-card" onclick="openLog('${safeId}','${safeM}','${encodedName}')">
+            <div class="stat-top">
+              <div class="stat-title-wrap">
+                <span class="stat-emoji">${this.escapeHtml(emoji || '🔗')}</span>
+                <span class="stat-title">${safeName}</span>
               </div>
-
-              <div class="top-actions">
-                <div class="quick-stats">
-                  <div class="quick-card">
-                    <div class="quick-label">总项目</div>
-                    <div class="quick-value">${safeLinks.length}</div>
-                  </div>
-                  <div class="quick-card">
-                    <div class="quick-label">本月总点击</div>
-                    <div class="quick-value" style="color:var(--blue)">${monthTotalClicks}</div>
-                  </div>
-                  <div class="quick-card">
-                    <div class="quick-label">活跃项目</div>
-                    <div class="quick-value">${Array.from(statsMap.values()).filter(c=>c.total_clicks>0).length}</div>
-                  </div>
-                </div>
-                <div class="action-row">
-                  <a href="/" class="action-btn action-soft">🏠 返回主页</a>
-                  <button class="action-btn action-primary" onclick="openSettings()">⚙️ 系统设置</button>
-                  <a href="${this.ADMIN_PATH}/logout" class="action-btn action-danger">登出</a>
-                </div>
-              </div>
-            </section>
-
-            <section class="toolbar">
-              <div class="toolbar-left">
-                <a href="${this.ADMIN_PATH}?m=${prevMonthStr}" class="tbtn" title="上个月">⏪ 上月</a>
-                <a href="${this.ADMIN_PATH}?m=${prevDay}" class="tbtn">◀ 上一项</a>
-                <div class="date-chip" title="点击切换日期">
-                  <span>📅</span>
-                  <strong>${this.escapeHtml(m)}</strong>
-                  <input type="date" value="${isDayMode ? this.escapeAttr(m) : ''}" onchange="if(this.value) location.href='${this.ADMIN_PATH}?m='+this.value">
-                </div>
-                <a href="${this.ADMIN_PATH}?m=${nextDay}" class="tbtn">下一项 ▶</a>
-                <a href="${this.ADMIN_PATH}?m=${nextMonthStr}" class="tbtn" title="下个月">下月 ⏩</a>
-              </div>
-              <div class="toolbar-right">
-                <a href="${this.ADMIN_PATH}?m=${this.time.todayStr}" class="tbtn ${m===this.time.todayStr?'active':''}">今日</a>
-                <a href="${this.ADMIN_PATH}?m=${this.time.dateKey}" class="tbtn ${m===this.time.dateKey?'active':''}">本月</a>
-              </div>
-            </section>
-
-            <div class="grid-main">
-              ${noticeHtmlPreview}
-              ${promoPreview}
-
-              <section class="panel">
-                <div class="panel-header">
-                  <div>
-                    <h3 class="panel-title">💎 精选数据</h3>
-                    <div class="panel-sub">点击任意卡片可查看访问记录详情</div>
-                  </div>
-                </div>
-                <div class="stats-grid">${linkHtml}</div>
-              </section>
-
-              <section class="panel">
-                <div class="panel-header">
-                  <div>
-                    <h3 class="panel-title">🔗 友链数据</h3>
-                    <div class="panel-sub">简要查看友链表现</div>
-                  </div>
-                </div>
-                <div class="mini-grid">${friendHtml}</div>
-              </section>
+              <span class="stat-pct">${progressVal}%</span>
             </div>
-          </div>
-
-          <div class="mask" id="mask" onclick="cls()"></div>
-
-          <aside class="drawer" id="dr">
-            <div class="drawer-head">
-              <h3 class="drawer-title" id="dt">点击记录</h3>
-              <button class="icon-btn" onclick="cls()">×</button>
+            <div class="stat-metrics">
+              <div class="metric">
+                <span class="metric-label">历史</span>
+                <span class="metric-value">${stat.total_clicks || 0}</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">${col2Label}</span>
+                <span class="metric-value metric-gold">${col2Val}</span>
+              </div>
+              <div class="metric">
+                <span class="metric-label">${col3Label}</span>
+                <span class="metric-value metric-blue">${col3Val}</span>
+              </div>
             </div>
-            <ul class="log-list" id="dl"></ul>
-          </aside>
+            <div class="progress"><div style="width:${progressVal}%"></div></div>
+            <div class="stat-foot">${timeIcon} ${this.escapeHtml(timeDisplay)}</div>
+          </div>`;
+  };
 
-          <div class="fs-modal" id="set-fs">
-            <div class="settings-wrap">
-              <div class="settings-head">
+  const linkHtml = safeLinks.map(i => buildCard(i.id, i.name, i.emoji, false)).join('');
+  const friendHtml = safeFriends.map(i => buildCard(i.id, i.name, '', true)).join('');
+
+  const sysSettings = {
+    admin_pass: this.config.admin_pass,
+    title: this.config.title,
+    subtitle: this.config.subtitle,
+    img: this.dbSettings.img || this.env.img || "",
+    contact_url: this.config.contact_url,
+    mail: this.config.mail,
+    push: this.dbSettings.push || this.env.push || "",
+    host: this.dbSettings.host || this.env.host || "",
+    notice: this.config.notice,
+
+    promo_enable: this.config.promo_enable,
+    promo_badge: this.config.promo_badge,
+    promo_title: this.config.promo_title,
+    promo_desc: this.config.promo_desc,
+    promo_url: this.config.promo_url,
+    promo_format: this.config.promo_format,
+
+    // ✅ 新增：账号广告配置
+    account_enable: this.config.account_enable,
+    account_badge: this.config.account_badge,
+    account_title: this.config.account_title,
+    account_desc: this.config.account_desc,
+    account_url: this.config.account_url,
+
+    links: JSON.stringify(this.LINKS_DATA, null, 2),
+    friends: JSON.stringify(this.FRIENDS_DATA, null, 2)
+  };
+
+  let noticeHtmlPreview = '';
+  if (this.config.notice && this.config.notice.trim() !== '') {
+    noticeHtmlPreview = `<div class="panel notice-panel"><div class="panel-head"><span>❤️</span><strong>公告预览</strong></div><div class="notice-preview">${this.config.notice}</div></div>`;
+  }
+
+  const promoPreview = String(this.config.promo_enable) === '1'
+    ? `<div class="panel notice-panel"><div class="panel-head"><span>📣</span><strong>推广卡预览（首页中部）</strong></div><div class="promo-preview-box"><div class="promo-preview-badge">${this.escapeHtml(this.config.promo_badge || '推广支持')}</div><div class="promo-preview-main"><div class="promo-preview-title">${this.escapeHtml(this.config.promo_title || '推广支持')}</div><div class="promo-preview-desc">${this.renderRichContent(this.config.promo_desc || '', this.config.promo_format)}</div></div></div></div>`
+    : '';
+
+  const accountPreview = (String(this.config.account_enable || '0') === '1' && (this.config.account_url || '').trim())
+    ? `<div class="panel notice-panel"><div class="panel-head"><span>🧾</span><strong>右侧账号广告预览</strong></div><div class="account-preview-box"><div class="account-preview-badge">${this.escapeHtml(this.config.account_badge || '账号购买')}</div><div class="account-preview-main"><div class="account-preview-title">${this.escapeHtml(this.config.account_title || '账号购买通道')}</div><div class="account-preview-desc">${this.escapeHtml(this.config.account_desc || '稳定 / 快速 / 自动发货')}</div><div class="account-preview-url">${this.escapeHtml(this.config.account_url || '')}</div></div></div></div>`
+    : '';
+
+  return `<!DOCTYPE html><html lang="zh-CN"><head>${this.render_Head(this.config.title)}<style>
+      :root{
+        --bg-card:rgba(15,23,42,0.70);
+        --bg-card-soft:rgba(15,23,42,0.58);
+        --bg-elev:rgba(255,255,255,0.05);
+        --bd:rgba(255,255,255,0.10);
+        --bd-strong:rgba(255,255,255,0.16);
+        --txt:#f8fafc;
+        --txt-sub:#94a3b8;
+        --txt-soft:#cbd5e1;
+        --blue:#38bdf8;
+        --violet:#8b5cf6;
+        --gold:#fbbf24;
+        --green:#34d399;
+        --red:#f87171;
+        --shadow:0 10px 28px rgba(2,6,23,0.18);
+        --shadow-soft:0 4px 14px rgba(2,6,23,0.12);
+      }
+      .light-theme{
+        --bg-card:rgba(255,255,255,0.92);
+        --bg-card-soft:rgba(255,255,255,0.84);
+        --bg-elev:rgba(15,23,42,0.04);
+        --bd:rgba(15,23,42,0.08);
+        --bd-strong:rgba(15,23,42,0.12);
+        --txt:#0f172a;
+        --txt-sub:#475569;
+        --txt-soft:#64748b;
+        --shadow:0 10px 24px rgba(15,23,42,0.08);
+        --shadow-soft:0 4px 12px rgba(15,23,42,0.06);
+      }
+      *{box-sizing:border-box}
+      html{scroll-behavior:smooth}
+      body{
+        color:var(--txt);
+        ${this.getBgShellStyle()}
+        padding:24px;
+        display:block;
+        margin:0;
+      }
+      .admin-shell{ width:min(1320px,100%); margin:0 auto; }
+
+      .theme-toggle{
+        position:fixed;
+        top:18px;
+        left:18px;
+        width:42px;
+        height:42px;
+        border-radius:14px;
+        border:1px solid var(--bd);
+        background:var(--bg-card-soft);
+        color:var(--txt);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        cursor:pointer;
+        z-index:120;
+        backdrop-filter:blur(10px);
+        box-shadow:var(--shadow-soft);
+      }
+
+      .topbar{
+        background:var(--bg-card);
+        border:1px solid var(--bd);
+        border-radius:28px;
+        backdrop-filter:blur(14px);
+        box-shadow:var(--shadow);
+        padding:28px;
+        display:grid;
+        grid-template-columns:1.4fr 1fr;
+        gap:22px;
+        margin-bottom:20px;
+      }
+      .hero-title{
+        font-size:clamp(1.9rem,4vw,2.8rem);
+        line-height:1.08;
+        letter-spacing:-0.04em;
+        margin:0 0 10px;
+        font-weight:900;
+      }
+      .hero-sub{
+        color:var(--txt-soft);
+        line-height:1.7;
+        font-size:.98rem;
+        max-width:760px;
+      }
+      .hero-tags{
+        margin-top:18px;
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+      }
+      .pill{
+        display:inline-flex;
+        align-items:center;
+        gap:8px;
+        padding:8px 12px;
+        border-radius:999px;
+        background:var(--bg-elev);
+        border:1px solid var(--bd);
+        color:var(--txt-soft);
+        font-size:.84rem;
+        font-weight:700;
+      }
+
+      .top-actions{
+        display:flex;
+        flex-direction:column;
+        justify-content:space-between;
+        gap:16px;
+      }
+      .quick-stats{
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:12px;
+      }
+      .quick-card{
+        background:var(--bg-elev);
+        border:1px solid var(--bd);
+        border-radius:18px;
+        padding:16px;
+        min-height:92px;
+        display:flex;
+        flex-direction:column;
+        justify-content:space-between;
+      }
+      .quick-label{
+        color:var(--txt-sub);
+        font-size:.82rem;
+        font-weight:700;
+        letter-spacing:.03em;
+      }
+      .quick-value{
+        font-size:1.76rem;
+        font-weight:900;
+        line-height:1;
+      }
+
+      .action-row{
+        display:flex;
+        gap:12px;
+        flex-wrap:wrap;
+        justify-content:flex-end;
+        align-items:center;
+      }
+      .action-btn{
+        appearance:none;
+        border:none;
+        text-decoration:none;
+        cursor:pointer;
+        padding:11px 15px;
+        border-radius:14px;
+        font-weight:800;
+        font-size:.92rem;
+        transition:.18s ease;
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        gap:8px;
+        box-shadow:var(--shadow-soft);
+      }
+      .action-btn:hover{ transform:translateY(-1px); }
+      .action-primary{ background:linear-gradient(135deg,#3b82f6,#8b5cf6); color:#fff; }
+      .action-soft{ background:var(--bg-elev); color:var(--txt); border:1px solid var(--bd); }
+      .action-danger{ background:rgba(248,113,113,.14); color:var(--red); border:1px solid rgba(248,113,113,.18); }
+
+      .toolbar{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:14px;
+        padding:14px 16px;
+        background:var(--bg-card-soft);
+        border:1px solid var(--bd);
+        border-radius:20px;
+        backdrop-filter:blur(12px);
+        box-shadow:var(--shadow-soft);
+        margin-bottom:20px;
+        flex-wrap:wrap;
+      }
+      .toolbar-left,.toolbar-right{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        flex-wrap:wrap;
+      }
+      .tbtn{
+        text-decoration:none;
+        color:var(--txt);
+        background:var(--bg-elev);
+        border:1px solid var(--bd);
+        padding:10px 14px;
+        border-radius:12px;
+        font-size:.9rem;
+        font-weight:800;
+        transition:.16s ease;
+      }
+      .tbtn:hover,.tbtn.active{
+        background:rgba(56,189,248,.14);
+        border-color:rgba(56,189,248,.24);
+        color:#7dd3fc;
+      }
+      .date-chip{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        padding:10px 14px;
+        border-radius:14px;
+        border:1px solid var(--bd);
+        background:var(--bg-elev);
+        position:relative;
+        overflow:hidden;
+      }
+      .date-chip strong{
+        font-family:monospace;
+        font-size:1rem;
+        letter-spacing:.02em;
+      }
+      .date-chip input[type="date"]{
+        position:absolute;
+        inset:0;
+        opacity:0;
+        cursor:pointer;
+      }
+
+      .grid-main{ display:grid; grid-template-columns:1fr; gap:20px; }
+      .panel{
+        background:var(--bg-card);
+        border:1px solid var(--bd);
+        border-radius:24px;
+        backdrop-filter:blur(14px);
+        box-shadow:var(--shadow);
+        padding:20px;
+      }
+      .panel-header{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+        margin-bottom:18px;
+        flex-wrap:wrap;
+      }
+      .panel-title{
+        margin:0;
+        font-size:1rem;
+        letter-spacing:.04em;
+        text-transform:uppercase;
+        color:#7dd3fc;
+        font-weight:900;
+      }
+      .panel-sub{
+        color:var(--txt-sub);
+        font-size:.86rem;
+      }
+
+      .stats-grid{
+        display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(280px,1fr));
+        gap:16px;
+      }
+      .stat-card{
+        border-radius:20px;
+        border:1px solid var(--bd);
+        background:linear-gradient(180deg,var(--bg-elev),rgba(255,255,255,0.02));
+        padding:18px;
+        cursor:pointer;
+        transition:.16s ease;
+        min-height:166px;
+        content-visibility:auto;
+        contain-intrinsic-size:166px;
+      }
+      .stat-card:hover{
+        transform:translateY(-2px);
+        border-color:rgba(56,189,248,.24);
+        box-shadow:0 10px 24px rgba(2,6,23,0.12);
+      }
+      .stat-top{
+        display:flex;
+        align-items:flex-start;
+        justify-content:space-between;
+        gap:12px;
+        margin-bottom:16px;
+      }
+      .stat-title-wrap{
+        display:flex;
+        align-items:center;
+        gap:12px;
+        min-width:0;
+        flex:1;
+      }
+      .stat-emoji{
+        width:42px;
+        height:42px;
+        border-radius:14px;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:rgba(255,255,255,.06);
+        border:1px solid var(--bd);
+        flex-shrink:0;
+        font-size:1.3rem;
+      }
+      .stat-title{
+        font-size:1rem;
+        font-weight:800;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+      .stat-pct{
+        flex-shrink:0;
+        padding:6px 10px;
+        border-radius:999px;
+        background:rgba(56,189,248,.12);
+        color:#7dd3fc;
+        font-weight:900;
+        font-size:.82rem;
+        border:1px solid rgba(56,189,248,.16);
+      }
+
+      .stat-metrics{
+        display:grid;
+        grid-template-columns:repeat(3,1fr);
+        gap:10px;
+        margin-bottom:14px;
+      }
+      .metric{
+        background:rgba(255,255,255,.02);
+        border:1px solid var(--bd);
+        border-radius:14px;
+        padding:12px 10px;
+        text-align:center;
+      }
+      .metric-label{
+        display:block;
+        font-size:.74rem;
+        color:var(--txt-sub);
+        margin-bottom:5px;
+        font-weight:700;
+      }
+      .metric-value{
+        font-size:1.05rem;
+        font-weight:900;
+        color:var(--txt);
+      }
+      .metric-gold{ color:var(--gold); }
+      .metric-blue{ color:var(--blue); }
+
+      .progress{
+        height:8px;
+        border-radius:999px;
+        background:rgba(255,255,255,.06);
+        overflow:hidden;
+        margin-bottom:12px;
+      }
+      .progress div{
+        height:100%;
+        border-radius:999px;
+        background:linear-gradient(90deg,#fbbf24,#38bdf8,#8b5cf6);
+      }
+      .stat-foot{
+        color:var(--txt-sub);
+        font-size:.82rem;
+        font-family:monospace;
+        text-align:right;
+      }
+
+      .mini-grid{
+        display:grid;
+        grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+        gap:12px;
+      }
+      .mini-card{
+        background:linear-gradient(180deg,var(--bg-elev),rgba(255,255,255,0.02));
+        border:1px solid var(--bd);
+        border-radius:18px;
+        padding:14px;
+        cursor:pointer;
+        transition:.16s ease;
+        content-visibility:auto;
+        contain-intrinsic-size:90px;
+      }
+      .mini-card:hover{
+        transform:translateY(-2px);
+        border-color:rgba(56,189,248,.24);
+      }
+      .mini-top{
+        display:flex;
+        align-items:center;
+        gap:8px;
+        justify-content:space-between;
+        margin-bottom:12px;
+      }
+      .mini-name{
+        min-width:0;
+        flex:1;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+        font-weight:800;
+      }
+      .mini-badge{
+        flex-shrink:0;
+        border-radius:999px;
+        padding:4px 8px;
+        background:rgba(56,189,248,.12);
+        border:1px solid rgba(56,189,248,.16);
+        color:#7dd3fc;
+        font-weight:900;
+        font-size:.78rem;
+      }
+      .mini-meta{
+        text-align:right;
+        color:var(--txt-sub);
+        font-family:monospace;
+        font-size:.78rem;
+      }
+
+      .notice-panel{ padding:18px 20px; }
+      .panel-head{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        margin-bottom:12px;
+        color:#fda4af;
+        font-weight:900;
+      }
+      .notice-preview{
+        color:var(--txt-soft);
+        line-height:1.8;
+        font-size:.94rem;
+      }
+
+      .promo-preview-box{
+        display:flex;
+        gap:16px;
+        align-items:flex-start;
+        padding:14px;
+        border-radius:18px;
+        background:linear-gradient(135deg, rgba(255,255,255,0.08), rgba(59,130,246,0.06));
+        border:1px solid var(--bd);
+      }
+      .promo-preview-badge{
+        min-width:130px;
+        padding:10px 14px;
+        border-radius:999px;
+        text-align:center;
+        background:rgba(255,255,255,0.08);
+        border:1px solid var(--bd);
+        font-weight:800;
+        color:#dbeafe;
+      }
+      .promo-preview-main{ flex:1; min-width:0; }
+      .promo-preview-title{
+        font-weight:900;
+        margin-bottom:8px;
+      }
+      .promo-preview-desc{
+        color:var(--txt-soft);
+        line-height:1.75;
+        font-size:.93rem;
+      }
+      .promo-preview-desc p{ margin:0 0 8px; }
+      .promo-preview-desc p:last-child{ margin-bottom:0; }
+      .promo-preview-desc ul{ margin:4px 0 0 18px; padding:0; }
+      .promo-preview-desc li{ margin:4px 0; }
+      .promo-preview-desc code{
+        padding:2px 6px;
+        border-radius:8px;
+        background:rgba(255,255,255,.06);
+        border:1px solid var(--bd);
+        font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+      }
+      .promo-preview-desc a{ color:#93c5fd; }
+
+      /* ✅ 新增：账号广告预览 */
+      .account-preview-box{
+        display:flex;
+        gap:14px;
+        align-items:flex-start;
+        padding:14px;
+        border-radius:18px;
+        background:linear-gradient(135deg, rgba(16,185,129,.10), rgba(59,130,246,.08));
+        border:1px solid var(--bd);
+      }
+      .account-preview-badge{
+        min-width:120px;
+        padding:9px 12px;
+        border-radius:999px;
+        text-align:center;
+        background:rgba(16,185,129,.18);
+        border:1px solid rgba(16,185,129,.3);
+        color:#d1fae5;
+        font-weight:800;
+      }
+      .account-preview-main{ flex:1; min-width:0; }
+      .account-preview-title{ font-weight:900; margin-bottom:8px; }
+      .account-preview-desc{ color:var(--txt-soft); line-height:1.7; font-size:.92rem; margin-bottom:6px; }
+      .account-preview-url{
+        font-size:.8rem;
+        font-family:monospace;
+        color:#86efac;
+        word-break:break-all;
+      }
+
+      .mask{
+        position:fixed;
+        inset:0;
+        background:rgba(2,6,23,.44);
+        z-index:140;
+        opacity:0;
+        pointer-events:none;
+        transition:.16s ease;
+      }
+      .mask.show{
+        opacity:1;
+        pointer-events:auto;
+      }
+
+      .drawer{
+        position:fixed;
+        top:0;
+        right:-440px;
+        width:400px;
+        max-width:100vw;
+        height:100vh;
+        z-index:150;
+        transition:.18s ease;
+        background:var(--bg-card);
+        border-left:1px solid var(--bd);
+        backdrop-filter:blur(14px);
+        box-shadow:-12px 0 24px rgba(2,6,23,.16);
+        display:flex;
+        flex-direction:column;
+      }
+      .drawer.open{ right:0; }
+      .drawer-head{
+        padding:18px;
+        border-bottom:1px solid var(--bd);
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:12px;
+      }
+      .drawer-title{
+        margin:0;
+        font-size:1.05rem;
+        font-weight:900;
+      }
+      .icon-btn{
+        width:36px;
+        height:36px;
+        border:none;
+        border-radius:12px;
+        cursor:pointer;
+        background:var(--bg-elev);
+        color:var(--txt);
+        border:1px solid var(--bd);
+        font-size:1.1rem;
+      }
+      .log-list{
+        flex:1;
+        overflow:auto;
+        padding:14px;
+        margin:0;
+        list-style:none;
+        display:flex;
+        flex-direction:column;
+        gap:10px;
+      }
+      .log-item{
+        padding:14px;
+        border-radius:16px;
+        border:1px solid var(--bd);
+        background:rgba(255,255,255,.02);
+      }
+      .log-row{
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:10px;
+        margin-bottom:8px;
+      }
+      .log-index{ color:#7dd3fc; font-weight:900; }
+      .log-time{ color:var(--txt); font-size:.86rem; }
+      .log-meta{
+        display:flex;
+        justify-content:space-between;
+        gap:10px;
+        flex-wrap:wrap;
+        font-family:monospace;
+        color:var(--txt-sub);
+        font-size:.76rem;
+      }
+
+      .fs-modal{
+        position:fixed;
+        inset:0;
+        background:rgba(2,6,23,.58);
+        z-index:160;
+        display:none;
+        overflow:auto;
+      }
+      .fs-modal.open{ display:block; }
+      .settings-wrap{
+        width:min(1180px,calc(100% - 24px));
+        margin:18px auto;
+        background:var(--bg-card);
+        border:1px solid var(--bd);
+        border-radius:28px;
+        box-shadow:var(--shadow);
+        overflow:hidden;
+      }
+      .settings-head{
+        padding:20px 22px;
+        border-bottom:1px solid var(--bd);
+        display:flex;
+        align-items:center;
+        justify-content:space-between;
+        gap:14px;
+        flex-wrap:wrap;
+        position:sticky;
+        top:0;
+        background:var(--bg-card);
+        z-index:2;
+      }
+      .settings-title{
+        margin:0;
+        font-size:1.22rem;
+        font-weight:900;
+      }
+      .settings-sub{
+        color:var(--txt-sub);
+        font-size:.9rem;
+        margin-top:6px;
+      }
+      .settings-actions{
+        display:flex;
+        gap:10px;
+        flex-wrap:wrap;
+      }
+      .settings-body{ padding:22px; }
+      .settings-grid{
+        display:grid;
+        grid-template-columns:repeat(2,1fr);
+        gap:16px;
+      }
+      .full{ grid-column:1 / -1; }
+
+      .field{
+        background:rgba(255,255,255,.02);
+        border:1px solid var(--bd);
+        border-radius:18px;
+        padding:16px;
+      }
+      .field label{
+        display:block;
+        font-size:.88rem;
+        color:var(--txt-sub);
+        margin-bottom:10px;
+        font-weight:800;
+      }
+      .field small{
+        display:block;
+        color:var(--txt-sub);
+        font-size:.78rem;
+        margin-top:8px;
+        line-height:1.6;
+      }
+      .field input,.field textarea,.field select{
+        width:100%;
+        border-radius:14px;
+        border:1px solid var(--bd-strong);
+        background:rgba(2,6,23,.18);
+        color:var(--txt);
+        padding:14px;
+        font-size:.95rem;
+        font-family:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,'Liberation Mono','Courier New',monospace;
+        outline:none;
+        transition:.16s ease;
+      }
+      .light-theme .field input,
+      .light-theme .field textarea,
+      .light-theme .field select{
+        background:#fff;
+      }
+      .field input:focus,.field textarea:focus,.field select:focus{
+        border-color:rgba(56,189,248,.42);
+        box-shadow:0 0 0 4px rgba(56,189,248,.10);
+      }
+      .field textarea{
+        min-height:130px;
+        resize:vertical;
+        line-height:1.55;
+        white-space:pre;
+      }
+      .field textarea.code{ min-height:250px; }
+
+      .field-tools{
+        display:flex;
+        gap:8px;
+        flex-wrap:wrap;
+        margin-bottom:10px;
+      }
+      .mini-btn{
+        appearance:none;
+        border:none;
+        cursor:pointer;
+        padding:8px 12px;
+        border-radius:12px;
+        font-weight:800;
+        font-size:.82rem;
+        background:var(--bg-elev);
+        color:var(--txt);
+        border:1px solid var(--bd);
+        transition:.16s ease;
+      }
+      .mini-btn:hover{ background:rgba(56,189,248,.12); border-color:rgba(56,189,248,.22); color:#7dd3fc; }
+
+      .switch-row{
+        display:flex;
+        align-items:center;
+        gap:12px;
+        flex-wrap:wrap;
+      }
+      .switch{
+        position:relative;
+        width:52px;
+        height:30px;
+        display:inline-block;
+      }
+      .switch input{ display:none; }
+      .slider{
+        position:absolute;
+        inset:0;
+        background:rgba(255,255,255,.10);
+        border:1px solid var(--bd);
+        border-radius:999px;
+        transition:.18s ease;
+      }
+      .slider:before{
+        content:'';
+        position:absolute;
+        width:22px;
+        height:22px;
+        left:3px;
+        top:3px;
+        background:#fff;
+        border-radius:50%;
+        transition:.18s ease;
+        box-shadow:0 2px 8px rgba(0,0,0,.18);
+      }
+      .switch input:checked + .slider{
+        background:rgba(56,189,248,.26);
+        border-color:rgba(56,189,248,.28);
+      }
+      .switch input:checked + .slider:before{
+        transform:translateX(22px);
+      }
+
+      @media (max-width: 1024px){
+        .topbar{ grid-template-columns:1fr; }
+      }
+      @media (max-width: 768px){
+        body{ padding:16px; }
+        .quick-stats{ grid-template-columns:1fr; }
+        .action-row{ justify-content:flex-start; }
+        .toolbar{ padding:14px; }
+        .stats-grid{ grid-template-columns:1fr; }
+        .settings-grid{ grid-template-columns:1fr; }
+        .drawer{ width:100%; right:-100%; }
+        .settings-wrap{ width:calc(100% - 10px); margin:5px auto; border-radius:20px; }
+        .settings-head,.settings-body{ padding:16px; }
+        .promo-preview-box{ flex-direction:column; }
+        .promo-preview-badge{ min-width:auto; width:fit-content; }
+        .account-preview-box{ flex-direction:column; }
+        .account-preview-badge{ min-width:auto; width:fit-content; }
+      }
+      </style></head>
+      <body>
+        <button class="theme-toggle" onclick="toggleAdminTheme()" title="切换主题">☀️</button>
+
+        <div class="admin-shell">
+          <section class="topbar">
+            <div>
+              <h1 class="hero-title">📊 数据看板</h1>
+              <div class="hero-sub">
+                当前查看维度：<strong style="color:var(--txt)">${this.escapeHtml(m)}</strong>。你可以在这里查看精选资源与友链的点击情况、快速预览公告与推广卡内容，并直接进入系统配置面板修改站点设置。
+              </div>
+              <div class="hero-tags">
+                <span class="pill">🧭 路径：${this.escapeHtml(this.ADMIN_PATH)}</span>
+                <span class="pill">🕒 时间：${this.escapeHtml(this.time.fullStr)}</span>
+                <span class="pill">📦 历史总计：${historyTotal}</span>
+              </div>
+            </div>
+
+            <div class="top-actions">
+              <div class="quick-stats">
+                <div class="quick-card">
+                  <div class="quick-label">总项目</div>
+                  <div class="quick-value">${safeLinks.length}</div>
+                </div>
+                <div class="quick-card">
+                  <div class="quick-label">本月总点击</div>
+                  <div class="quick-value" style="color:var(--blue)">${monthTotalClicks}</div>
+                </div>
+                <div class="quick-card">
+                  <div class="quick-label">活跃项目</div>
+                  <div class="quick-value">${Array.from(statsMap.values()).filter(c=>c.total_clicks>0).length}</div>
+                </div>
+              </div>
+              <div class="action-row">
+                <a href="/" class="action-btn action-soft">🏠 返回主页</a>
+                <button class="action-btn action-primary" onclick="openSettings()">⚙️ 系统设置</button>
+                <a href="${this.ADMIN_PATH}/logout" class="action-btn action-danger">登出</a>
+              </div>
+            </div>
+          </section>
+
+          <section class="toolbar">
+            <div class="toolbar-left">
+              <a href="${this.ADMIN_PATH}?m=${prevMonthStr}" class="tbtn" title="上个月">⏪ 上月</a>
+              <a href="${this.ADMIN_PATH}?m=${prevDay}" class="tbtn">◀ 上一项</a>
+              <div class="date-chip" title="点击切换日期">
+                <span>📅</span>
+                <strong>${this.escapeHtml(m)}</strong>
+                <input type="date" value="${isDayMode ? this.escapeAttr(m) : ''}" onchange="if(this.value) location.href='${this.ADMIN_PATH}?m='+this.value">
+              </div>
+              <a href="${this.ADMIN_PATH}?m=${nextDay}" class="tbtn">下一项 ▶</a>
+              <a href="${this.ADMIN_PATH}?m=${nextMonthStr}" class="tbtn" title="下个月">下月 ⏩</a>
+            </div>
+            <div class="toolbar-right">
+              <a href="${this.ADMIN_PATH}?m=${this.time.todayStr}" class="tbtn ${m===this.time.todayStr?'active':''}">今日</a>
+              <a href="${this.ADMIN_PATH}?m=${this.time.dateKey}" class="tbtn ${m===this.time.dateKey?'active':''}">本月</a>
+            </div>
+          </section>
+
+          <div class="grid-main">
+            ${noticeHtmlPreview}
+            ${promoPreview}
+            ${accountPreview}
+
+            <section class="panel">
+              <div class="panel-header">
                 <div>
-                  <h3 class="settings-title">⚙️ 系统全局配置</h3>
-                  <div class="settings-sub">支持 JSON 自动格式化、示例模板填充、推广卡 HTML / Markdown 内容配置。</div>
-                </div>
-                <div class="settings-actions">
-                  <button class="action-btn action-soft" onclick="cls()">取消 (Esc)</button>
-                  <button class="action-btn action-primary" onclick="saveSettings(this)">💾 保存并生效</button>
+                  <h3 class="panel-title">💎 精选数据</h3>
+                  <div class="panel-sub">点击任意卡片可查看访问记录详情</div>
                 </div>
               </div>
+              <div class="stats-grid">${linkHtml}</div>
+            </section>
 
-              <div class="settings-body">
-                <div class="settings-grid">
-                  <div class="field">
-                    <label>后台登录密码</label>
-                    <input type="text" id="s_pass" placeholder="默认: 123456">
+            <section class="panel">
+              <div class="panel-header">
+                <div>
+                  <h3 class="panel-title">🔗 友链数据</h3>
+                  <div class="panel-sub">简要查看友链表现</div>
+                </div>
+              </div>
+              <div class="mini-grid">${friendHtml}</div>
+            </section>
+          </div>
+        </div>
+
+        <div class="mask" id="mask" onclick="cls()"></div>
+
+        <aside class="drawer" id="dr">
+          <div class="drawer-head">
+            <h3 class="drawer-title" id="dt">点击记录</h3>
+            <button class="icon-btn" onclick="cls()">×</button>
+          </div>
+          <ul class="log-list" id="dl"></ul>
+        </aside>
+
+        <div class="fs-modal" id="set-fs">
+          <div class="settings-wrap">
+            <div class="settings-head">
+              <div>
+                <h3 class="settings-title">⚙️ 系统全局配置</h3>
+                <div class="settings-sub">支持 JSON 自动格式化、示例模板填充、推广卡 HTML / Markdown 内容配置、右侧账号广告配置。</div>
+              </div>
+              <div class="settings-actions">
+                <button class="action-btn action-soft" onclick="cls()">取消 (Esc)</button>
+                <button class="action-btn action-primary" onclick="saveSettings(this)">💾 保存并生效</button>
+              </div>
+            </div>
+
+            <div class="settings-body">
+              <div class="settings-grid">
+                <div class="field">
+                  <label>后台登录密码</label>
+                  <input type="text" id="s_pass" placeholder="默认: 123456">
+                </div>
+
+                <div class="field">
+                  <label>网站主标题</label>
+                  <input type="text" id="s_title">
+                </div>
+
+                <div class="field">
+                  <label>网站副标题</label>
+                  <input type="text" id="s_sub">
+                </div>
+
+                <div class="field">
+                  <label>客服支持链接</label>
+                  <input type="text" id="s_tg" placeholder="例如 Telegram / 工单地址">
+                </div>
+
+                <div class="field full">
+                  <label>背景图 URL（多图用逗号隔开，支持 Base64）</label>
+                  <input type="text" id="s_img" placeholder="留空使用默认高清壁纸">
+                  <small>建议使用可公开访问、跨浏览器兼容的图片地址。如果图床开启防盗链，部分浏览器会回退到默认背景。</small>
+                </div>
+
+                <div class="field">
+                  <label>联系邮箱</label>
+                  <input type="text" id="s_mail" placeholder="留空则不显示底部邮箱按钮">
+                </div>
+
+                <div class="field">
+                  <label>留言板推送 Webhook</label>
+                  <input type="text" id="s_push" placeholder="留空则不显示留言按钮">
+                </div>
+
+                <div class="field full">
+                  <label>温馨提示公告（支持 HTML，清空则隐藏）</label>
+                  <textarea id="s_notice"></textarea>
+                </div>
+
+                <div class="field full">
+                  <label>推广卡开关 / 配置（首页中部）</label>
+                  <div class="switch-row" style="margin-bottom:12px;">
+                    <label class="switch">
+                      <input type="checkbox" id="s_promo_enable">
+                      <span class="slider"></span>
+                    </label>
+                    <span style="color:var(--txt-sub);font-weight:700;">启用首页推广卡</span>
                   </div>
-
-                  <div class="field">
-                    <label>网站主标题</label>
-                    <input type="text" id="s_title">
-                  </div>
-
-                  <div class="field">
-                    <label>网站副标题</label>
-                    <input type="text" id="s_sub">
-                  </div>
-
-                  <div class="field">
-                    <label>客服支持链接</label>
-                    <input type="text" id="s_tg" placeholder="例如 Telegram / 工单地址">
-                  </div>
-
-                  <div class="field full">
-                    <label>背景图 URL（多图用逗号隔开，支持 Base64）</label>
-                    <input type="text" id="s_img" placeholder="留空使用默认高清壁纸">
-                    <small>建议使用可公开访问、跨浏览器兼容的图片地址。如果图床开启防盗链，部分浏览器会回退到默认背景。</small>
-                  </div>
-
-                  <div class="field">
-                    <label>联系邮箱</label>
-                    <input type="text" id="s_mail" placeholder="留空则不显示底部邮箱按钮">
-                  </div>
-
-                  <div class="field">
-                    <label>留言板推送 Webhook</label>
-                    <input type="text" id="s_push" placeholder="留空则不显示留言按钮">
-                  </div>
-
-                  <div class="field full">
-                    <label>温馨提示公告（支持 HTML，清空则隐藏）</label>
-                    <textarea id="s_notice"></textarea>
-                  </div>
-
-                  <div class="field full">
-                    <label>推广卡开关 / 配置</label>
-                    <div class="switch-row" style="margin-bottom:12px;">
-                      <label class="switch">
-                        <input type="checkbox" id="s_promo_enable">
-                        <span class="slider"></span>
-                      </label>
-                      <span style="color:var(--txt-sub);font-weight:700;">启用首页推广卡</span>
+                  <div class="settings-grid">
+                    <div class="field">
+                      <label>推广卡徽标文字</label>
+                      <input type="text" id="s_promo_badge" placeholder="如：免费域名可托管 CF">
                     </div>
-                    <div class="settings-grid">
-                      <div class="field">
-                        <label>推广卡徽标文字</label>
-                        <input type="text" id="s_promo_badge" placeholder="如：免费域名可托管 CF">
-                      </div>
-                      <div class="field">
-                        <label>推广卡标题</label>
-                        <input type="text" id="s_promo_title" placeholder="如：本站域名服务由 ... 提供支持">
-                      </div>
-                      <div class="field">
-                        <label>推广卡跳转链接</label>
-                        <input type="text" id="s_promo_url" placeholder="https://...">
-                      </div>
-                      <div class="field">
-                        <label>推广卡内容格式</label>
-                        <select id="s_promo_format">
-                          <option value="markdown">Markdown</option>
-                          <option value="html">HTML</option>
-                        </select>
-                      </div>
+                    <div class="field">
+                      <label>推广卡标题</label>
+                      <input type="text" id="s_promo_title" placeholder="如：本站域名服务由 ... 提供支持">
                     </div>
-                    <div style="margin-top:16px;">
-                      <label style="display:block;margin-bottom:10px;font-size:.88rem;color:var(--txt-sub);font-weight:800;">推广卡描述内容</label>
-                      <textarea id="s_promo_desc" style="min-height:150px"></textarea>
-                      <small>支持 Markdown 或 HTML。Markdown 支持标题、加粗、斜体、列表、链接、行内代码等基础语法。</small>
+                    <div class="field">
+                      <label>推广卡跳转链接</label>
+                      <input type="text" id="s_promo_url" placeholder="https://...">
+                    </div>
+                    <div class="field">
+                      <label>推广卡内容格式</label>
+                      <select id="s_promo_format">
+                        <option value="markdown">Markdown</option>
+                        <option value="html">HTML</option>
+                      </select>
                     </div>
                   </div>
+                  <div style="margin-top:16px;">
+                    <label style="display:block;margin-bottom:10px;font-size:.88rem;color:var(--txt-sub);font-weight:800;">推广卡描述内容</label>
+                    <textarea id="s_promo_desc" style="min-height:150px"></textarea>
+                    <small>支持 Markdown 或 HTML。Markdown 支持标题、加粗、斜体、列表、链接、行内代码等基础语法。</small>
+                  </div>
+                </div>
 
-                  <div class="field full">
-                    <label>自定义卡片跳转域名</label>
-                    <input type="text" id="s_host" placeholder="如果不填，默认自动使用当前访问域名">
+                <!-- ✅ 新增：账号广告配置 -->
+                <div class="field full">
+                  <label>右侧账号广告开关 / 配置</label>
+                  <div class="switch-row" style="margin-bottom:12px;">
+                    <label class="switch">
+                      <input type="checkbox" id="s_account_enable">
+                      <span class="slider"></span>
+                    </label>
+                    <span style="color:var(--txt-sub);font-weight:700;">启用首页右侧账号广告位</span>
                   </div>
-
-                  <div class="field full">
-                    <label>💎 精选资源 LINKS（JSON 格式）</label>
-                    <div class="field-tools">
-                      <button class="mini-btn" type="button" onclick="formatJsonField('s_links')">自动格式化</button>
-                      <button class="mini-btn" type="button" onclick="fillLinksExample()">填入示例模板</button>
+                  <div class="settings-grid">
+                    <div class="field">
+                      <label>广告徽标</label>
+                      <input type="text" id="s_account_badge" placeholder="如：账号购买">
                     </div>
-                    <textarea id="s_links" class="code"></textarea>
-                  </div>
-
-                  <div class="field full">
-                    <label>🔗 合作伙伴 FRIENDS（JSON 格式）</label>
-                    <div class="field-tools">
-                      <button class="mini-btn" type="button" onclick="formatJsonField('s_friends')">自动格式化</button>
-                      <button class="mini-btn" type="button" onclick="fillFriendsExample()">填入示例模板</button>
+                    <div class="field">
+                      <label>广告标题</label>
+                      <input type="text" id="s_account_title" placeholder="如：ChatGPT / AI 账号购买">
                     </div>
-                    <textarea id="s_friends" class="code"></textarea>
+                    <div class="field full">
+                      <label>广告描述</label>
+                      <textarea id="s_account_desc" style="min-height:100px" placeholder="如：稳定 / 快速 / 自动发货"></textarea>
+                    </div>
+                    <div class="field full">
+                      <label>广告跳转链接</label>
+                      <input type="text" id="s_account_url" placeholder="https://...">
+                    </div>
                   </div>
+                </div>
+
+                <div class="field full">
+                  <label>自定义卡片跳转域名</label>
+                  <input type="text" id="s_host" placeholder="如果不填，默认自动使用当前访问域名">
+                </div>
+
+                <div class="field full">
+                  <label>💎 精选资源 LINKS（JSON 格式）</label>
+                  <div class="field-tools">
+                    <button class="mini-btn" type="button" onclick="formatJsonField('s_links')">自动格式化</button>
+                    <button class="mini-btn" type="button" onclick="fillLinksExample()">填入示例模板</button>
+                  </div>
+                  <textarea id="s_links" class="code"></textarea>
+                </div>
+
+                <div class="field full">
+                  <label>🔗 合作伙伴 FRIENDS（JSON 格式）</label>
+                  <div class="field-tools">
+                    <button class="mini-btn" type="button" onclick="formatJsonField('s_friends')">自动格式化</button>
+                    <button class="mini-btn" type="button" onclick="fillFriendsExample()">填入示例模板</button>
+                  </div>
+                  <textarea id="s_friends" class="code"></textarea>
                 </div>
               </div>
             </div>
           </div>
+        </div>
 
-          ${this.render_BgRuntimeScript()}
+        ${this.render_BgRuntimeScript()}
 
-          <script>
-            console.log('admin script loaded');
-            const ADMIN_PATH = '${this.ADMIN_PATH}';
-            const SYS_SET = ${this.safeScriptJson(sysSettings)};
+        <script>
+          console.log('admin script loaded');
+          const ADMIN_PATH = '${this.ADMIN_PATH}';
+          const SYS_SET = ${this.safeScriptJson(sysSettings)};
 
-            const LINKS_EXAMPLE = [
-              {
-                id: "google",
-                name: "Google 搜索",
-                url: "https://www.google.com",
-                backup_url: "https://www.google.com.hk",
-                emoji: "🔎",
-                note: "全球常用搜索引擎",
-                tag: "推荐"
-              },
-              {
-                id: "github",
-                name: "GitHub",
-                url: "https://github.com",
-                emoji: "💻",
-                note: "代码托管与开源社区"
-              }
-            ];
-
-            const FRIENDS_EXAMPLE = [
-              {
-                id: "friend_1",
-                name: "示例友链站点",
-                url: "https://example.com"
-              },
-              {
-                id: "friend_2",
-                name: "另一个合作伙伴",
-                url: "https://example.org"
-              }
-            ];
-
-            function initAdminTheme() {
-              const btn = document.querySelector('.theme-toggle');
-              if (!btn) return;
-
-              if(localStorage.getItem('admin_theme') === 'light') {
-                document.body.classList.add('light-theme');
-                btn.textContent = '🌙';
-              } else {
-                btn.textContent = '☀️';
-              }
+          const LINKS_EXAMPLE = [
+            {
+              id: "google",
+              name: "Google 搜索",
+              url: "https://www.google.com",
+              backup_url: "https://www.google.com.hk",
+              emoji: "🔎",
+              note: "全球常用搜索引擎",
+              tag: "推荐"
+            },
+            {
+              id: "github",
+              name: "GitHub",
+              url: "https://github.com",
+              emoji: "💻",
+              note: "代码托管与开源社区"
             }
-            initAdminTheme();
+          ];
 
-            function toggleAdminTheme() {
-              const btn = document.querySelector('.theme-toggle');
-              document.body.classList.toggle('light-theme');
-              const isLight = document.body.classList.contains('light-theme');
-              localStorage.setItem('admin_theme', isLight ? 'light' : 'dark');
-              if (btn) btn.textContent = isLight ? '🌙' : '☀️';
+          const FRIENDS_EXAMPLE = [
+            {
+              id: "friend_1",
+              name: "示例友链站点",
+              url: "https://example.com"
+            },
+            {
+              id: "friend_2",
+              name: "另一个合作伙伴",
+              url: "https://example.org"
             }
+          ];
 
-            async function openLog(id, m, n){
-              const dr = document.getElementById('dr');
-              const mask = document.getElementById('mask');
-              const l = document.getElementById('dl');
+          function initAdminTheme() {
+            const btn = document.querySelector('.theme-toggle');
+            if (!btn) return;
 
-              dr.classList.add('open');
-              mask.classList.add('show');
-
-              // ✅ 修复：decodeURIComponent
-              const safeName = decodeURIComponent(n || '');
-              document.getElementById('dt').innerText = safeName + ' · 点击记录';
-
-              l.innerHTML = '<li style="padding:20px;text-align:center;color:var(--txt-sub)">加载中...</li>';
-
-              try {
-                const r = await fetch(\`\${ADMIN_PATH}/api/logs?id=\${encodeURIComponent(id)}&m=\${encodeURIComponent(m)}\`);
-                const data = await r.json();
-
-                if(!data.length){
-                  l.innerHTML = '<li style="padding:20px;text-align:center;opacity:.6;color:var(--txt-sub)">该时段无记录</li>';
-                  return;
-                }
-
-                let html = '';
-                for(let i = 0; i < data.length; i++){
-                  const x = data[i];
-                  html += \`
-                    <li class="log-item">
-                      <div class="log-row">
-                        <span class="log-index">#\${i+1}</span>
-                        <span class="log-time">\${x.click_time}</span>
-                      </div>
-                      <div class="log-meta">
-                        <span>\${x.ip_address}</span>
-                        <span>\${(x.user_agent || '').slice(0,46) || 'unknown'}</span>
-                      </div>
-                    </li>
-                  \`;
-                }
-                l.innerHTML = html;
-              } catch(e) {
-                l.innerHTML = '<li style="padding:20px;text-align:center;color:#f87171">加载失败</li>';
-                console.error(e);
-              }
+            if(localStorage.getItem('admin_theme') === 'light') {
+              document.body.classList.add('light-theme');
+              btn.textContent = '🌙';
+            } else {
+              btn.textContent = '☀️';
             }
+          }
+          initAdminTheme();
 
-            function openSettings() {
-              document.getElementById('s_pass').value = SYS_SET.admin_pass || '';
-              document.getElementById('s_title').value = SYS_SET.title || '';
-              document.getElementById('s_sub').value = SYS_SET.subtitle || '';
-              document.getElementById('s_img').value = SYS_SET.img || '';
-              document.getElementById('s_tg').value = SYS_SET.contact_url || '';
-              document.getElementById('s_mail').value = SYS_SET.mail || '';
-              document.getElementById('s_push').value = SYS_SET.push || '';
-              document.getElementById('s_host').value = SYS_SET.host || '';
-              document.getElementById('s_notice').value = SYS_SET.notice || '';
+          function toggleAdminTheme() {
+            const btn = document.querySelector('.theme-toggle');
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('admin_theme', isLight ? 'light' : 'dark');
+            if (btn) btn.textContent = isLight ? '🌙' : '☀️';
+          }
 
-              document.getElementById('s_promo_enable').checked = String(SYS_SET.promo_enable || '0') === '1';
-              document.getElementById('s_promo_badge').value = SYS_SET.promo_badge || '';
-              document.getElementById('s_promo_title').value = SYS_SET.promo_title || '';
-              document.getElementById('s_promo_desc').value = SYS_SET.promo_desc || '';
-              document.getElementById('s_promo_url').value = SYS_SET.promo_url || '';
-              document.getElementById('s_promo_format').value = SYS_SET.promo_format || 'markdown';
+          async function openLog(id, m, n){
+            const dr = document.getElementById('dr');
+            const mask = document.getElementById('mask');
+            const l = document.getElementById('dl');
 
-              document.getElementById('s_links').value = SYS_SET.links || '[]';
-              document.getElementById('s_friends').value = SYS_SET.friends || '[]';
+            dr.classList.add('open');
+            mask.classList.add('show');
 
-              document.getElementById('set-fs').classList.add('open');
-              document.getElementById('mask').classList.add('show');
-              document.body.style.overflow = 'hidden';
-            }
+            const safeName = decodeURIComponent(n || '');
+            document.getElementById('dt').innerText = safeName + ' · 点击记录';
 
-            function formatJsonField(id){
-              const el = document.getElementById(id);
-              try{
-                const parsed = JSON.parse(el.value);
-                el.value = JSON.stringify(parsed, null, 2);
-                alert('✅ 已自动格式化');
-              }catch(e){
-                alert('⚠️ JSON 格式有误，无法格式化');
-              }
-            }
+            l.innerHTML = '<li style="padding:20px;text-align:center;color:var(--txt-sub)">加载中...</li>';
 
-            function fillLinksExample(){
-              const el = document.getElementById('s_links');
-              if(el.value.trim() && !confirm('当前 LINKS 内容不为空，确定要用示例模板覆盖吗？')) return;
-              el.value = JSON.stringify(LINKS_EXAMPLE, null, 2);
-            }
+            try {
+              const r = await fetch(\`\${ADMIN_PATH}/api/logs?id=\${encodeURIComponent(id)}&m=\${encodeURIComponent(m)}\`);
+              const data = await r.json();
 
-            function fillFriendsExample(){
-              const el = document.getElementById('s_friends');
-              if(el.value.trim() && !confirm('当前 FRIENDS 内容不为空，确定要用示例模板覆盖吗？')) return;
-              el.value = JSON.stringify(FRIENDS_EXAMPLE, null, 2);
-            }
-
-            async function saveSettings(btn) {
-              try {
-                JSON.parse(document.getElementById('s_links').value);
-                JSON.parse(document.getElementById('s_friends').value);
-              } catch(e) {
-                alert("⚠️ JSON 格式解析错误！请检查是否有遗漏的逗号、引号或括号。");
+              if(!data.length){
+                l.innerHTML = '<li style="padding:20px;text-align:center;opacity:.6;color:var(--txt-sub)">该时段无记录</li>';
                 return;
               }
 
-              const data = {
-                admin_pass: document.getElementById('s_pass').value,
-                title: document.getElementById('s_title').value,
-                subtitle: document.getElementById('s_sub').value,
-                img: document.getElementById('s_img').value,
-                contact_url: document.getElementById('s_tg').value,
-                mail: document.getElementById('s_mail').value,
-                push: document.getElementById('s_push').value,
-                host: document.getElementById('s_host').value,
-                notice: document.getElementById('s_notice').value,
-
-                promo_enable: document.getElementById('s_promo_enable').checked ? '1' : '0',
-                promo_badge: document.getElementById('s_promo_badge').value,
-                promo_title: document.getElementById('s_promo_title').value,
-                promo_desc: document.getElementById('s_promo_desc').value,
-                promo_url: document.getElementById('s_promo_url').value,
-                promo_format: document.getElementById('s_promo_format').value,
-
-                links: document.getElementById('s_links').value,
-                friends: document.getElementById('s_friends').value
-              };
-
-              const originalText = btn.innerText;
-              btn.innerText = "保存中...";
-              btn.disabled = true;
-
-              try {
-                const res = await fetch(\`\${ADMIN_PATH}/api/settings\`, {
-                  method: 'POST',
-                  body: JSON.stringify(data)
-                });
-                if(res.ok) {
-                  alert('✅ 配置已保存并生效！');
-                  location.reload();
-                } else {
-                  alert('❌ 保存失败');
-                }
-              } catch(e) {
-                alert('❌ 网络错误');
+              let html = '';
+              for(let i = 0; i < data.length; i++){
+                const x = data[i];
+                html += \`
+                  <li class="log-item">
+                    <div class="log-row">
+                      <span class="log-index">#\${i+1}</span>
+                      <span class="log-time">\${x.click_time}</span>
+                    </div>
+                    <div class="log-meta">
+                      <span>\${x.ip_address}</span>
+                      <span>\${(x.user_agent || '').slice(0,46) || 'unknown'}</span>
+                    </div>
+                  </li>
+                \`;
               }
+              l.innerHTML = html;
+            } catch(e) {
+              l.innerHTML = '<li style="padding:20px;text-align:center;color:#f87171">加载失败</li>';
+              console.error(e);
+            }
+          }
 
-              btn.innerText = originalText;
-              btn.disabled = false;
+          function openSettings() {
+            document.getElementById('s_pass').value = SYS_SET.admin_pass || '';
+            document.getElementById('s_title').value = SYS_SET.title || '';
+            document.getElementById('s_sub').value = SYS_SET.subtitle || '';
+            document.getElementById('s_img').value = SYS_SET.img || '';
+            document.getElementById('s_tg').value = SYS_SET.contact_url || '';
+            document.getElementById('s_mail').value = SYS_SET.mail || '';
+            document.getElementById('s_push').value = SYS_SET.push || '';
+            document.getElementById('s_host').value = SYS_SET.host || '';
+            document.getElementById('s_notice').value = SYS_SET.notice || '';
+
+            document.getElementById('s_promo_enable').checked = String(SYS_SET.promo_enable || '0') === '1';
+            document.getElementById('s_promo_badge').value = SYS_SET.promo_badge || '';
+            document.getElementById('s_promo_title').value = SYS_SET.promo_title || '';
+            document.getElementById('s_promo_desc').value = SYS_SET.promo_desc || '';
+            document.getElementById('s_promo_url').value = SYS_SET.promo_url || '';
+            document.getElementById('s_promo_format').value = SYS_SET.promo_format || 'markdown';
+
+            // ✅ 新增：账号广告回填
+            document.getElementById('s_account_enable').checked = String(SYS_SET.account_enable || '0') === '1';
+            document.getElementById('s_account_badge').value = SYS_SET.account_badge || '';
+            document.getElementById('s_account_title').value = SYS_SET.account_title || '';
+            document.getElementById('s_account_desc').value = SYS_SET.account_desc || '';
+            document.getElementById('s_account_url').value = SYS_SET.account_url || '';
+
+            document.getElementById('s_links').value = SYS_SET.links || '[]';
+            document.getElementById('s_friends').value = SYS_SET.friends || '[]';
+
+            document.getElementById('set-fs').classList.add('open');
+            document.getElementById('mask').classList.add('show');
+            document.body.style.overflow = 'hidden';
+          }
+
+          function formatJsonField(id){
+            const el = document.getElementById(id);
+            try{
+              const parsed = JSON.parse(el.value);
+              el.value = JSON.stringify(parsed, null, 2);
+              alert('✅ 已自动格式化');
+            }catch(e){
+              alert('⚠️ JSON 格式有误，无法格式化');
+            }
+          }
+
+          function fillLinksExample(){
+            const el = document.getElementById('s_links');
+            if(el.value.trim() && !confirm('当前 LINKS 内容不为空，确定要用示例模板覆盖吗？')) return;
+            el.value = JSON.stringify(LINKS_EXAMPLE, null, 2);
+          }
+
+          function fillFriendsExample(){
+            const el = document.getElementById('s_friends');
+            if(el.value.trim() && !confirm('当前 FRIENDS 内容不为空，确定要用示例模板覆盖吗？')) return;
+            el.value = JSON.stringify(FRIENDS_EXAMPLE, null, 2);
+          }
+
+          async function saveSettings(btn) {
+            try {
+              JSON.parse(document.getElementById('s_links').value);
+              JSON.parse(document.getElementById('s_friends').value);
+            } catch(e) {
+              alert("⚠️ JSON 格式解析错误！请检查是否有遗漏的逗号、引号或括号。");
+              return;
             }
 
-            function cls() {
-              document.getElementById('dr').classList.remove('open');
-              document.getElementById('set-fs').classList.remove('open');
-              document.getElementById('mask').classList.remove('show');
-              document.body.style.overflow = '';
+            const data = {
+              admin_pass: document.getElementById('s_pass').value,
+              title: document.getElementById('s_title').value,
+              subtitle: document.getElementById('s_sub').value,
+              img: document.getElementById('s_img').value,
+              contact_url: document.getElementById('s_tg').value,
+              mail: document.getElementById('s_mail').value,
+              push: document.getElementById('s_push').value,
+              host: document.getElementById('s_host').value,
+              notice: document.getElementById('s_notice').value,
+
+              promo_enable: document.getElementById('s_promo_enable').checked ? '1' : '0',
+              promo_badge: document.getElementById('s_promo_badge').value,
+              promo_title: document.getElementById('s_promo_title').value,
+              promo_desc: document.getElementById('s_promo_desc').value,
+              promo_url: document.getElementById('s_promo_url').value,
+              promo_format: document.getElementById('s_promo_format').value,
+
+              // ✅ 新增：账号广告保存
+              account_enable: document.getElementById('s_account_enable').checked ? '1' : '0',
+              account_badge: document.getElementById('s_account_badge').value,
+              account_title: document.getElementById('s_account_title').value,
+              account_desc: document.getElementById('s_account_desc').value,
+              account_url: document.getElementById('s_account_url').value,
+
+              links: document.getElementById('s_links').value,
+              friends: document.getElementById('s_friends').value
+            };
+
+            const originalText = btn.innerText;
+            btn.innerText = "保存中...";
+            btn.disabled = true;
+
+            try {
+              const res = await fetch(\`\${ADMIN_PATH}/api/settings\`, {
+                method: 'POST',
+                body: JSON.stringify(data)
+              });
+              if(res.ok) {
+                alert('✅ 配置已保存并生效！');
+                location.reload();
+              } else {
+                alert('❌ 保存失败');
+              }
+            } catch(e) {
+              alert('❌ 网络错误');
             }
 
-            document.addEventListener('keydown', (e) => {
-              if(e.key === 'Escape') cls();
-            });
-          </script>
-        </body></html>`;
-  }
+            btn.innerText = originalText;
+            btn.disabled = false;
+          }
+
+          function cls() {
+            document.getElementById('dr').classList.remove('open');
+            document.getElementById('set-fs').classList.remove('open');
+            document.getElementById('mask').classList.remove('show');
+            document.body.style.overflow = '';
+          }
+
+          document.addEventListener('keydown', (e) => {
+            if(e.key === 'Escape') cls();
+          });
+        </script>
+      </body></html>`;
+}
 }
