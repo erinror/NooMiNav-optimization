@@ -2390,27 +2390,24 @@ class NooMiNav {
             }
           ];
          
-          const ACCOUNT_MD_EXAMPLE = `### 🔐 账号购买
+          const ACCOUNT_MD_EXAMPLE = '### 🔐 账号购买\n\n'
+          + 'Google 账号 / Apple 外区 ID / Telegram / Instagram / X\n\n'
+          + '- 多种类型可选\n'
+          + '- 快速处理\n'
+          + '- 自动发货\n'
+  + '- 下单前请先查看商品说明\n\n'
+  + '[👉 立即进入购买通道](https://tgsss.com/9EB6941B)';
 
-Google 账号 / Apple 外区 ID / Telegram / Instagram / X
-
-- 多种类型可选
-- 快速处理
-- 自动发货
-- 下单前请先查看商品说明
-
-[👉 立即进入购买通道](https://tgsss.com/9EB6941B)`;
-
-const ACCOUNT_HTML_EXAMPLE = `<div class="ad-badge">账号购买</div>
-<h3>Google / Apple 外区 ID / Telegram / Instagram / X</h3>
-<p>多种账号可选，快速处理，支持自动发货。</p>
-<ul>
-  <li>Google 账号</li>
-  <li>Apple 外区 ID</li>
-  <li>Telegram / Instagram / X</li>
-</ul>
-<a class="ad-btn" href="https://tgsss.com/9EB6941B" target="_blank" rel="noopener noreferrer">👉 立即进入购买通道</a>
-<p style="margin-top:8px;opacity:.78;font-size:12px;">下单前建议先查看商品说明，按需求选择版本。</p>`;
+const ACCOUNT_HTML_EXAMPLE = '<div class="ad-badge">账号购买</div>\n'
+  + '<h3>Google / Apple 外区 ID / Telegram / Instagram / X</h3>\n'
+  + '<p>多种账号可选，快速处理，支持自动发货。</p>\n'
+  + '<ul>\n'
+  + '  <li>Google 账号</li>\n'
+  + '  <li>Apple 外区 ID</li>\n'
+  + '  <li>Telegram / Instagram / X</li>\n'
+  + '</ul>\n'
+  + '<a class="ad-btn" href="https://tgsss.com/9EB6941B" target="_blank" rel="noopener noreferrer">👉 立即进入购买通道</a>\n'
+  + '<p style="margin-top:8px;opacity:.78;font-size:12px;">下单前建议先查看商品说明，按需求选择版本。</p>';
 
           function initAdminTheme() {
             const btn = document.querySelector('.theme-toggle');
