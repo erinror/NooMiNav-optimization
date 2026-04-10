@@ -2354,267 +2354,266 @@ class NooMiNav {
         ${this.render_BgRuntimeScript()}
 
         <script>
-          console.log('admin script loaded');
-          const ADMIN_PATH = '${this.ADMIN_PATH}';
-          const SYS_SET = ${this.safeScriptJson(sysSettings)};
+  console.log('admin script loaded');
+  const ADMIN_PATH = '${this.ADMIN_PATH}';
+  const SYS_SET = ${this.safeScriptJson(sysSettings)};
 
-          const LINKS_EXAMPLE = [
-            {
-              id: "google",
-              name: "Google 搜索",
-              url: "https://www.google.com",
-              backup_url: "https://www.google.com.hk",
-              emoji: "🔎",
-              note: "全球常用搜索引擎",
-              tag: "推荐"
-            },
-            {
-              id: "github",
-              name: "GitHub",
-              url: "https://github.com",
-              emoji: "💻",
-              note: "代码托管与开源社区"
-            }
-          ];
+  const LINKS_EXAMPLE = [
+    {
+      id: "google",
+      name: "Google 搜索",
+      url: "https://www.google.com",
+      backup_url: "https://www.google.com.hk",
+      emoji: "🔎",
+      note: "全球常用搜索引擎",
+      tag: "推荐"
+    },
+    {
+      id: "github",
+      name: "GitHub",
+      url: "https://github.com",
+      emoji: "💻",
+      note: "代码托管与开源社区"
+    }
+  ];
 
-          const FRIENDS_EXAMPLE = [
-            {
-              id: "friend_1",
-              name: "示例友链站点",
-              url: "https://example.com"
-            },
-            {
-              id: "friend_2",
-              name: "另一个合作伙伴",
-              url: "https://example.org"
-            }
-          ];
-         
-          const ACCOUNT_MD_EXAMPLE = '### 🔐 账号购买\n\n'
-          + 'Google 账号 / Apple 外区 ID / Telegram / Instagram / X\n\n'
-          + '- 多种类型可选\n'
-          + '- 快速处理\n'
-          + '- 自动发货\n'
-  + '- 下单前请先查看商品说明\n\n'
-  + '[👉 立即进入购买通道](https://tgsss.com/9EB6941B)';
+  const FRIENDS_EXAMPLE = [
+    {
+      id: "friend_1",
+      name: "示例友链站点",
+      url: "https://example.com"
+    },
+    {
+      id: "friend_2",
+      name: "另一个合作伙伴",
+      url: "https://example.org"
+    }
+  ];
 
-const ACCOUNT_HTML_EXAMPLE = '<div class="ad-badge">账号购买</div>\n'
-  + '<h3>Google / Apple 外区 ID / Telegram / Instagram / X</h3>\n'
-  + '<p>多种账号可选，快速处理，支持自动发货。</p>\n'
-  + '<ul>\n'
-  + '  <li>Google 账号</li>\n'
-  + '  <li>Apple 外区 ID</li>\n'
-  + '  <li>Telegram / Instagram / X</li>\n'
-  + '</ul>\n'
-  + '<a class="ad-btn" href="https://tgsss.com/9EB6941B" target="_blank" rel="noopener noreferrer">👉 立即进入购买通道</a>\n'
-  + '<p style="margin-top:8px;opacity:.78;font-size:12px;">下单前建议先查看商品说明，按需求选择版本。</p>';
+  const ACCOUNT_MD_EXAMPLE = '### 🔐 账号购买\n\n'
+    + 'Google 账号 / Apple 外区 ID / Telegram / Instagram / X\n\n'
+    + '- 多种类型可选\n'
+    + '- 快速处理\n'
+    + '- 自动发货\n'
+    + '- 下单前请先查看商品说明\n\n'
+    + '[👉 立即进入购买通道](https://tgsss.com/9EB6941B)';
 
-          function initAdminTheme() {
-            const btn = document.querySelector('.theme-toggle');
-            if (!btn) return;
+  const ACCOUNT_HTML_EXAMPLE = '<div class="ad-badge">账号购买</div>\n'
+    + '<h3>Google / Apple 外区 ID / Telegram / Instagram / X</h3>\n'
+    + '<p>多种账号可选，快速处理，支持自动发货。</p>\n'
+    + '<ul>\n'
+    + '  <li>Google 账号</li>\n'
+    + '  <li>Apple 外区 ID</li>\n'
+    + '  <li>Telegram / Instagram / X</li>\n'
+    + '</ul>\n'
+    + '<a class="ad-btn" href="https://tgsss.com/9EB6941B" target="_blank" rel="noopener noreferrer">👉 立即进入购买通道</a>\n'
+    + '<p style="margin-top:8px;opacity:.78;font-size:12px;">下单前建议先查看商品说明，按需求选择版本。</p>';
 
-            if(localStorage.getItem('admin_theme') === 'light') {
-              document.body.classList.add('light-theme');
-              btn.textContent = '🌙';
-            } else {
-              btn.textContent = '☀️';
-            }
-          }
-          initAdminTheme();
+  function initAdminTheme() {
+    const btn = document.querySelector('.theme-toggle');
+    if (!btn) return;
 
-          function toggleAdminTheme() {
-            const btn = document.querySelector('.theme-toggle');
-            document.body.classList.toggle('light-theme');
-            const isLight = document.body.classList.contains('light-theme');
-            localStorage.setItem('admin_theme', isLight ? 'light' : 'dark');
-            if (btn) btn.textContent = isLight ? '🌙' : '☀️';
-          }
+    if (localStorage.getItem('admin_theme') === 'light') {
+      document.body.classList.add('light-theme');
+      btn.textContent = '🌙';
+    } else {
+      btn.textContent = '☀️';
+    }
+  }
+  initAdminTheme();
 
-          async function openLog(id, m, n){
-            const dr = document.getElementById('dr');
-            const mask = document.getElementById('mask');
-            const l = document.getElementById('dl');
+  function toggleAdminTheme() {
+    const btn = document.querySelector('.theme-toggle');
+    document.body.classList.toggle('light-theme');
+    const isLight = document.body.classList.contains('light-theme');
+    localStorage.setItem('admin_theme', isLight ? 'light' : 'dark');
+    if (btn) btn.textContent = isLight ? '🌙' : '☀️';
+  }
 
-            dr.classList.add('open');
-            mask.classList.add('show');
+  async function openLog(id, m, n) {
+    const dr = document.getElementById('dr');
+    const mask = document.getElementById('mask');
+    const l = document.getElementById('dl');
 
-            const safeName = decodeURIComponent(n || '');
-            document.getElementById('dt').innerText = safeName + ' · 点击记录';
+    dr.classList.add('open');
+    mask.classList.add('show');
 
-            l.innerHTML = '<li style="padding:20px;text-align:center;color:var(--txt-sub)">加载中...</li>';
+    const safeName = decodeURIComponent(n || '');
+    document.getElementById('dt').innerText = safeName + ' · 点击记录';
 
-            try {
-              const r = await fetch(\`\${ADMIN_PATH}/api/logs?id=\${encodeURIComponent(id)}&m=\${encodeURIComponent(m)}\`);
-              const data = await r.json();
+    l.innerHTML = '<li style="padding:20px;text-align:center;color:var(--txt-sub)">加载中...</li>';
 
-              if(!data.length){
-                l.innerHTML = '<li style="padding:20px;text-align:center;opacity:.6;color:var(--txt-sub)">该时段无记录</li>';
-                return;
-              }
+    try {
+      const r = await fetch(
+        ADMIN_PATH + '/api/logs?id=' + encodeURIComponent(id) + '&m=' + encodeURIComponent(m)
+      );
+      const data = await r.json();
 
-              let html = '';
-              for(let i = 0; i < data.length; i++){
-                const x = data[i];
-                html += \`
-                  <li class="log-item">
-                    <div class="log-row">
-                      <span class="log-index">#\${i+1}</span>
-                      <span class="log-time">\${x.click_time}</span>
-                    </div>
-                    <div class="log-meta">
-                      <span>\${x.ip_address}</span>
-                      <span>\${(x.user_agent || '').slice(0,46) || 'unknown'}</span>
-                    </div>
-                  </li>
-                \`;
-              }
-              l.innerHTML = html;
-            } catch(e) {
-              l.innerHTML = '<li style="padding:20px;text-align:center;color:#f87171">加载失败</li>';
-              console.error(e);
-            }
-          }
+      if (!data.length) {
+        l.innerHTML = '<li style="padding:20px;text-align:center;opacity:.6;color:var(--txt-sub)">该时段无记录</li>';
+        return;
+      }
 
-          function openSettings() {
-            document.getElementById('s_pass').value = SYS_SET.admin_pass || '';
-            document.getElementById('s_title').value = SYS_SET.title || '';
-            document.getElementById('s_sub').value = SYS_SET.subtitle || '';
-            document.getElementById('s_img').value = SYS_SET.img || '';
-            document.getElementById('s_tg').value = SYS_SET.contact_url || '';
-            document.getElementById('s_mail').value = SYS_SET.mail || '';
-            document.getElementById('s_push').value = SYS_SET.push || '';
-            document.getElementById('s_host').value = SYS_SET.host || '';
-            document.getElementById('s_notice').value = SYS_SET.notice || '';
+      let html = '';
+      for (let i = 0; i < data.length; i++) {
+        const x = data[i];
+        html += '<li class="log-item">'
+          + '<div class="log-row">'
+          + '<span class="log-index">#' + (i + 1) + '</span>'
+          + '<span class="log-time">' + (x.click_time || '') + '</span>'
+          + '</div>'
+          + '<div class="log-meta">'
+          + '<span>' + (x.ip_address || 'unknown') + '</span>'
+          + '<span>' + ((((x.user_agent || '').slice(0, 46)) || 'unknown')) + '</span>'
+          + '</div>'
+          + '</li>';
+      }
+      l.innerHTML = html;
+    } catch (e) {
+      l.innerHTML = '<li style="padding:20px;text-align:center;color:#f87171">加载失败</li>';
+      console.error(e);
+    }
+  }
 
-            document.getElementById('s_promo_enable').checked = String(SYS_SET.promo_enable || '0') === '1';
-            document.getElementById('s_promo_badge').value = SYS_SET.promo_badge || '';
-            document.getElementById('s_promo_title').value = SYS_SET.promo_title || '';
-            document.getElementById('s_promo_desc').value = SYS_SET.promo_desc || '';
-            document.getElementById('s_promo_url').value = SYS_SET.promo_url || '';
-            document.getElementById('s_promo_format').value = SYS_SET.promo_format || 'markdown';
+  function openSettings() {
+    document.getElementById('s_pass').value = SYS_SET.admin_pass || '';
+    document.getElementById('s_title').value = SYS_SET.title || '';
+    document.getElementById('s_sub').value = SYS_SET.subtitle || '';
+    document.getElementById('s_img').value = SYS_SET.img || '';
+    document.getElementById('s_tg').value = SYS_SET.contact_url || '';
+    document.getElementById('s_mail').value = SYS_SET.mail || '';
+    document.getElementById('s_push').value = SYS_SET.push || '';
+    document.getElementById('s_host').value = SYS_SET.host || '';
+    document.getElementById('s_notice').value = SYS_SET.notice || '';
 
-            // ✅ 新增：账号广告回填
-            document.getElementById('s_account_enable').checked = String(SYS_SET.account_enable || '0') === '1';
-            document.getElementById('s_account_format').value = SYS_SET.account_format || 'markdown';
-            document.getElementById('s_account_content').value = SYS_SET.account_content || '';
+    document.getElementById('s_promo_enable').checked = String(SYS_SET.promo_enable || '0') === '1';
+    document.getElementById('s_promo_badge').value = SYS_SET.promo_badge || '';
+    document.getElementById('s_promo_title').value = SYS_SET.promo_title || '';
+    document.getElementById('s_promo_desc').value = SYS_SET.promo_desc || '';
+    document.getElementById('s_promo_url').value = SYS_SET.promo_url || '';
+    document.getElementById('s_promo_format').value = SYS_SET.promo_format || 'markdown';
 
-            document.getElementById('s_links').value = SYS_SET.links || '[]';
-            document.getElementById('s_friends').value = SYS_SET.friends || '[]';
+    document.getElementById('s_account_enable').checked = String(SYS_SET.account_enable || '0') === '1';
+    document.getElementById('s_account_format').value = SYS_SET.account_format || 'markdown';
+    document.getElementById('s_account_content').value = SYS_SET.account_content || '';
 
-            document.getElementById('set-fs').classList.add('open');
-            document.getElementById('mask').classList.add('show');
-            document.body.style.overflow = 'hidden';
-          }
+    document.getElementById('s_links').value = SYS_SET.links || '[]';
+    document.getElementById('s_friends').value = SYS_SET.friends || '[]';
 
-          function formatJsonField(id){
-            const el = document.getElementById(id);
-            try{
-              const parsed = JSON.parse(el.value);
-              el.value = JSON.stringify(parsed, null, 2);
-              alert('✅ 已自动格式化');
-            }catch(e){
-              alert('⚠️ JSON 格式有误，无法格式化');
-            }
-          }
+    document.getElementById('set-fs').classList.add('open');
+    document.getElementById('mask').classList.add('show');
+    document.body.style.overflow = 'hidden';
+  }
 
-          function fillLinksExample(){
-            const el = document.getElementById('s_links');
-            if(el.value.trim() && !confirm('当前 LINKS 内容不为空，确定要用示例模板覆盖吗？')) return;
-            el.value = JSON.stringify(LINKS_EXAMPLE, null, 2);
-          }
+  function formatJsonField(id) {
+    const el = document.getElementById(id);
+    try {
+      const parsed = JSON.parse(el.value);
+      el.value = JSON.stringify(parsed, null, 2);
+      alert('✅ 已自动格式化');
+    } catch (e) {
+      alert('⚠️ JSON 格式有误，无法格式化');
+    }
+  }
 
-          function fillFriendsExample(){
-  const el = document.getElementById('s_friends');
-  if(el.value.trim() && !confirm('当前 FRIENDS 内容不为空，确定要用示例模板覆盖吗？')) return;
-  el.value = JSON.stringify(FRIENDS_EXAMPLE, null, 2);
-}
+  function fillLinksExample() {
+    const el = document.getElementById('s_links');
+    if (el.value.trim() && !confirm('当前 LINKS 内容不为空，确定要用示例模板覆盖吗？')) return;
+    el.value = JSON.stringify(LINKS_EXAMPLE, null, 2);
+  }
 
-          function fillAccountMarkdownExample(){
-  const el = document.getElementById('s_account_content');
-  if(el.value.trim() && !confirm('当前账号广告内容不为空，确定要用 Markdown 示例覆盖吗？')) return;
-  document.getElementById('s_account_format').value = 'markdown';
-  el.value = ACCOUNT_MD_EXAMPLE;
-}
+  function fillFriendsExample() {
+    const el = document.getElementById('s_friends');
+    if (el.value.trim() && !confirm('当前 FRIENDS 内容不为空，确定要用示例模板覆盖吗？')) return;
+    el.value = JSON.stringify(FRIENDS_EXAMPLE, null, 2);
+  }
 
-function fillAccountHtmlExample(){
-  const el = document.getElementById('s_account_content');
-  if(el.value.trim() && !confirm('当前账号广告内容不为空，确定要用 HTML 示例覆盖吗？')) return;
-  document.getElementById('s_account_format').value = 'html';
-  el.value = ACCOUNT_HTML_EXAMPLE;
-}
+  function fillAccountMarkdownExample() {
+    const el = document.getElementById('s_account_content');
+    if (el.value.trim() && !confirm('当前账号广告内容不为空，确定要用 Markdown 示例覆盖吗？')) return;
+    document.getElementById('s_account_format').value = 'markdown';
+    el.value = ACCOUNT_MD_EXAMPLE;
+  }
 
-          async function saveSettings(btn) {
-            try {
-              JSON.parse(document.getElementById('s_links').value);
-              JSON.parse(document.getElementById('s_friends').value);
-            } catch(e) {
-              alert("⚠️ JSON 格式解析错误！请检查是否有遗漏的逗号、引号或括号。");
-              return;
-            }
+  function fillAccountHtmlExample() {
+    const el = document.getElementById('s_account_content');
+    if (el.value.trim() && !confirm('当前账号广告内容不为空，确定要用 HTML 示例覆盖吗？')) return;
+    document.getElementById('s_account_format').value = 'html';
+    el.value = ACCOUNT_HTML_EXAMPLE;
+  }
 
-            const data = {
-              admin_pass: document.getElementById('s_pass').value,
-              title: document.getElementById('s_title').value,
-              subtitle: document.getElementById('s_sub').value,
-              img: document.getElementById('s_img').value,
-              contact_url: document.getElementById('s_tg').value,
-              mail: document.getElementById('s_mail').value,
-              push: document.getElementById('s_push').value,
-              host: document.getElementById('s_host').value,
-              notice: document.getElementById('s_notice').value,
+  async function saveSettings(btn) {
+    try {
+      JSON.parse(document.getElementById('s_links').value);
+      JSON.parse(document.getElementById('s_friends').value);
+    } catch (e) {
+      alert('⚠️ JSON 格式解析错误！请检查是否有遗漏的逗号、引号或括号。');
+      return;
+    }
 
-              promo_enable: document.getElementById('s_promo_enable').checked ? '1' : '0',
-              promo_badge: document.getElementById('s_promo_badge').value,
-              promo_title: document.getElementById('s_promo_title').value,
-              promo_desc: document.getElementById('s_promo_desc').value,
-              promo_url: document.getElementById('s_promo_url').value,
-              promo_format: document.getElementById('s_promo_format').value,
+    const data = {
+      admin_pass: document.getElementById('s_pass').value,
+      title: document.getElementById('s_title').value,
+      subtitle: document.getElementById('s_sub').value,
+      img: document.getElementById('s_img').value,
+      contact_url: document.getElementById('s_tg').value,
+      mail: document.getElementById('s_mail').value,
+      push: document.getElementById('s_push').value,
+      host: document.getElementById('s_host').value,
+      notice: document.getElementById('s_notice').value,
 
-              account_enable: document.getElementById('s_account_enable').checked ? '1' : '0',
-              account_format: document.getElementById('s_account_format').value,
-              account_content: document.getElementById('s_account_content').value,
+      promo_enable: document.getElementById('s_promo_enable').checked ? '1' : '0',
+      promo_badge: document.getElementById('s_promo_badge').value,
+      promo_title: document.getElementById('s_promo_title').value,
+      promo_desc: document.getElementById('s_promo_desc').value,
+      promo_url: document.getElementById('s_promo_url').value,
+      promo_format: document.getElementById('s_promo_format').value,
 
-              links: document.getElementById('s_links').value,
-              friends: document.getElementById('s_friends').value
-            };
+      account_enable: document.getElementById('s_account_enable').checked ? '1' : '0',
+      account_format: document.getElementById('s_account_format').value,
+      account_content: document.getElementById('s_account_content').value,
 
-            const originalText = btn.innerText;
-            btn.innerText = "保存中...";
-            btn.disabled = true;
+      links: document.getElementById('s_links').value,
+      friends: document.getElementById('s_friends').value
+    };
 
-            try {
-              const res = await fetch(ADMIN_PATH + '/api/settings', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify(data)
-});
-                
-              if (res.ok) {
-                  alert('✅ 配置已保存并生效！');
-                  location.reload();
-                  } else {
-                  const text = await res.text();
-                  alert('❌ 保存失败：' + text);
-              }
-            } catch(e) {
-              alert('❌ 网络错误');
-            }
+    const originalText = btn.innerText;
+    btn.innerText = '保存中...';
+    btn.disabled = true;
 
-            btn.innerText = originalText;
-            btn.disabled = false;
-          }
+    try {
+      const res = await fetch(ADMIN_PATH + '/api/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
 
-          function cls() {
-            document.getElementById('dr').classList.remove('open');
-            document.getElementById('set-fs').classList.remove('open');
-            document.getElementById('mask').classList.remove('show');
-            document.body.style.overflow = '';
-          }
+      if (res.ok) {
+        alert('✅ 配置已保存并生效！');
+        location.reload();
+      } else {
+        const text = await res.text();
+        alert('❌ 保存失败：' + text);
+      }
+    } catch (e) {
+      alert('❌ 网络错误');
+    }
 
-          document.addEventListener('keydown', (e) => {
-            if(e.key === 'Escape') cls();
-          });
-        </script>
+    btn.innerText = originalText;
+    btn.disabled = false;
+  }
+
+  function cls() {
+    document.getElementById('dr').classList.remove('open');
+    document.getElementById('set-fs').classList.remove('open');
+    document.getElementById('mask').classList.remove('show');
+    document.body.style.overflow = '';
+  }
+
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') cls();
+  });
+</script>
       </body></html>`;
 }
 }
