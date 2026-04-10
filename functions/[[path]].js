@@ -109,7 +109,12 @@ class NooMiNav {
       promo_title: this.dbSettings.promo_title !== undefined ? this.dbSettings.promo_title : (this.env.promo_title || "本站域名服务由 DigitalPlat FreeDomain 提供支持"),
       promo_desc: this.dbSettings.promo_desc !== undefined ? this.dbSettings.promo_desc : (this.env.promo_desc || "可免费申请域名，支持 Cloudflare 托管接入，适合导航站与个人项目使用。"),
       promo_url: this.dbSettings.promo_url !== undefined ? this.dbSettings.promo_url : (this.env.promo_url || "https://dash.domain.digitalplat.org/signup?ref=s8ywnMQRkL"),
-      promo_format: this.dbSettings.promo_format !== undefined ? this.dbSettings.promo_format : (this.env.promo_format || "markdown")
+      promo_format: this.dbSettings.promo_format !== undefined ? this.dbSettings.promo_format : (this.env.promo_format || "markdown"),
+      account_enable: this.dbSettings.account_enable !== undefined ? this.dbSettings.account_enable : (this.env.account_enable || "0"),
+      account_badge: this.dbSettings.account_badge !== undefined ? this.dbSettings.account_badge : (this.env.account_badge || "账号购买"),
+      account_title: this.dbSettings.account_title !== undefined ? this.dbSettings.account_title : (this.env.account_title || "账号购买通道"),
+      account_desc: this.dbSettings.account_desc !== undefined ? this.dbSettings.account_desc : (this.env.account_desc || "稳定 / 快速 / 自动发货"),
+      account_url: this.dbSettings.account_url !== undefined ? this.dbSettings.account_url : (this.env.account_url || "")
     };
 
     if (this.config.push && !this.config.push.endsWith('/contact')) {
@@ -359,7 +364,8 @@ class NooMiNav {
       const allowed = new Set([
         "admin_pass", "title", "subtitle", "img", "contact_url", "mail", "push", "host", "notice",
         "promo_enable", "promo_badge", "promo_title", "promo_desc", "promo_url", "promo_format",
-        "links", "friends"
+        "account_enable", "account_badge", "account_title", "account_desc", "account_url",
+         "links", "friends"
       ]);
       const stmts = Object.keys(body)
         .filter(k => allowed.has(k))
