@@ -702,641 +702,454 @@ class NooMiNav {
   }
 
     render_HomePage() {
-  const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
-  const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
+    const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
+    const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
 
-  // 中部推广（免费域名）
-  const promoEnabled = String(this.config.promo_enable || '0') === '1';
-  const promoUrl = this.config.promo_url || '';
-  const promoBadge = this.config.promo_badge || '推广支持';
-  const promoTitle = this.config.promo_title || '推广支持';
-  const promoDesc = this.config.promo_desc || '';
+    // 中部推广（免费域名）
+    const promoEnabled = String(this.config.promo_enable || '0') === '1';
+    const promoUrl = this.config.promo_url || '';
+    const promoBadge = this.config.promo_badge || '推广支持';
+    const promoTitle = this.config.promo_title || '推广支持';
+    const promoDesc = this.config.promo_desc || '';
 
-  // ✅ 账号广告：改为和域名卡类似的中部卡片
-  const accountEnabled = String(this.config.account_enable || '0') === '1';
-  const accountFormat = this.config.account_format || 'markdown';
-  const accountContent = (this.config.account_content || '').trim();
+    // ✅ 账号广告：改为中间卡片
+    const accountEnabled = String(this.config.account_enable || '0') === '1';
+    const accountFormat = this.config.account_format || 'markdown';
+    const accountContent = (this.config.account_content || '').trim();
 
-  const cardsHtml = safeLinks.map(item => {
-    const itemId = this.escapeAttr(item.id || '');
-    const mainUrl = `/go/${itemId}`;
-    const backupHtml = item.backup_url
-      ? `<a href="/go/${itemId}/backup" class="tag-backup" title="备用线路">备用</a>`
-      : '';
-    const customTagHtml = item.tag
-      ? `<span class="tag-special">${this.escapeHtml(item.tag)}</span>`
-      : '';
-    return `<div class="glass-card resource-card-wrap">
-      <a href="${mainUrl}" class="resource-main-link">
-        <div class="card-icon">${this.escapeHtml(item.emoji || '🔗')}</div>
-        <div class="card-info">
-          <h3 style="display:flex;align-items:center;flex-wrap:wrap;">
-            ${this.escapeHtml(item.name || '')}${customTagHtml}
-          </h3>
-          <p>⚠️ ${this.escapeHtml(item.note || '无说明')}</p>
-        </div>
-      </a>
-      ${backupHtml}
-    </div>`;
-  }).join('');
+    const cardsHtml = safeLinks.map(item => {
+      const itemId = this.escapeAttr(item.id || '');
+      const mainUrl = `/go/${itemId}`;
+      const backupHtml = item.backup_url ? `<a href="/go/${itemId}/backup" class="tag-backup" title="备用线路">备用</a>` : '';
+      const customTagHtml = item.tag ? `<span class="tag-special">${this.escapeHtml(item.tag)}</span>` : '';
+      return `<div class="glass-card resource-card-wrap"><a href="${mainUrl}" class="resource-main-link"><div class="card-icon">${this.escapeHtml(item.emoji || '🔗')}</div><div class="card-info"><h3 style="display:flex;align-items:center;flex-wrap:wrap;">${this.escapeHtml(item.name || '')}${customTagHtml}</h3><p>⚠️ ${this.escapeHtml(item.note || '无说明')}</p></div></a>${backupHtml}</div>`;
+    }).join('');
 
-  const friendsHtml = safeFriends.map((f) =>
-    `<a href="/fgo/${this.escapeAttr(f.id || '')}" target="_blank" class="glass-card partner-card">${this.escapeHtml(f.name || '')}</a>`
-  ).join('');
+    const friendsHtml = safeFriends.map((f) => `<a href="/fgo/${this.escapeAttr(f.id || '')}" target="_blank" class="glass-card partner-card">${this.escapeHtml(f.name || '')}</a>`).join('');
 
-  let fabHtml = `<div class="fab-container">`;
-  if (this.config.contact_url) {
-    fabHtml += `<a href="${this.escapeAttr(this.config.contact_url)}" target="_blank" class="fab-btn fab-telegram">💬 获取支持</a>`;
-  }
-  if (this.config.mail) {
-    fabHtml += `<a href="mailto:${this.escapeAttr(this.config.mail)}" class="fab-btn fab-mail">📧 发送邮件</a>`;
-  }
-  if (this.config.push) {
-    fabHtml += `<a href="/contact" class="fab-btn fab-push">📝 给我留言</a>`;
-  }
-  fabHtml += `</div>`;
+    let fabHtml = `<div class="fab-container">`;
+    if (this.config.contact_url) fabHtml += `<a href="${this.escapeAttr(this.config.contact_url)}" target="_blank" class="fab-btn fab-telegram">💬 获取支持</a>`;
+    if (this.config.mail) fabHtml += `<a href="mailto:${this.escapeAttr(this.config.mail)}" class="fab-btn fab-mail">📧 发送邮件</a>`;
+    if (this.config.push) fabHtml += `<a href="/contact" class="fab-btn fab-push">📝 给我留言</a>`;
+    fabHtml += `</div>`;
 
-  let noticeHtml = '';
-  if (this.config.notice && this.config.notice.trim() !== '') {
-    noticeHtml = `<div class="glass-card notice-card">
-      <div class="notice-title"><span class="heart-beat">❤️</span> 温馨提示</div>
-      <div class="notice-content">${this.config.notice}</div>
-    </div>`;
-  }
-
-  // 页面中部推广卡（域名）
-  let promoHtml = '';
-  if (promoEnabled && promoUrl) {
-    const promoRendered = this.renderRichContent(promoDesc, this.config.promo_format);
-    promoHtml = `
-      <a href="${this.escapeAttr(promoUrl)}"
-         target="_blank"
-         rel="noopener noreferrer"
-         class="glass-card promo-card">
-        <div class="promo-badge">${this.escapeHtml(promoBadge)}</div>
-        <div class="promo-content">
-          <div class="promo-title">${this.escapeHtml(promoTitle)}</div>
-          <div class="promo-desc rich-content">${promoRendered}</div>
-        </div>
-      </a>
-    `;
-  }
-
-  // ✅ 账号广告卡：与域名卡统一风格，放在精选上方
-  let accountCardHtml = '';
-  if (accountEnabled && accountContent) {
-    const accountRendered = this.renderRichContent(accountContent, accountFormat);
-    accountCardHtml = `
-      <section class="glass-card account-promo-card">
-        <div class="account-promo-badge">账号推荐</div>
-        <div class="account-promo-content">
-          <div class="account-promo-title">热门账号 / 数字服务</div>
-          <div class="account-promo-desc rich-content">${accountRendered}</div>
-        </div>
-      </section>
-    `;
-  }
-
-  return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${this.escapeHtml(this.config.title)}</title><style>
-    :root {
-      --glass: rgba(255,255,255,0.14);
-      --border: rgba(255,255,255,0.16);
-      --text-main: #fff;
-      --text-sub: rgba(226,232,240,0.92);
-      --warning: #fcd34d;
-      --primary: #8b5cf6;
-      --primary-2: #38bdf8;
-      --backdrop-blur: 12px;
-      --shadow-soft: 0 8px 20px rgba(15,23,42,.14);
-      --shadow-hover: 0 14px 28px rgba(15,23,42,.18);
-      --transition: .22s ease;
-    }
-    .dark-theme {
-      --glass: rgba(15,23,42,0.82);
-      --border: rgba(255,255,255,0.10);
-      --text-main: #f8fafc;
-      --text-sub: rgba(226,232,240,.88);
-    }
-    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
-    body {
-      font-family: ${this.FONT_STACK};
-      color: var(--text-main);
-      ${this.getBgShellStyle()}
-      min-height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 40px 20px 100px;
-      position: relative;
-    }
-    .container { width: 100%; max-width: 1200px; }
-    .glass-card {
-      background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
-      backdrop-filter: blur(var(--backdrop-blur));
-      -webkit-backdrop-filter: blur(var(--backdrop-blur));
-      border: 1px solid var(--border);
-      border-radius: 20px;
-      box-shadow: var(--shadow-soft);
-      transition: var(--transition);
-    }
-    .dark-theme .glass-card {
-      background: linear-gradient(135deg, rgba(15,23,42,.82), rgba(15,23,42,.68));
+    let noticeHtml = '';
+    if (this.config.notice && this.config.notice.trim() !== '') {
+      noticeHtml = `<div class="glass-card notice-card"><div class="notice-title"><span class="heart-beat">❤️</span> 温馨提示</div><div class="notice-content">${this.config.notice}</div></div>`;
     }
 
-    .header { text-align: center; padding: 48px 28px; margin-bottom: 28px; }
-    .header h1 {
-      font-size: clamp(2.1rem, 5vw, 3.3rem);
-      font-weight: 800;
-      line-height: 1.08;
-      letter-spacing: -0.035em;
-      margin-bottom: 12px;
-      text-shadow: 0 6px 18px rgba(0,0,0,0.28);
-    }
-    .header p {
-      max-width: 720px;
-      margin: 0 auto;
-      font-size: 1rem;
-      line-height: 1.75;
-      color: var(--text-sub);
+    // ✅ 中间账号卡片：放在域名卡片上面
+    let accountCardHtml = '';
+    if (accountEnabled && accountContent) {
+      const accountRendered = this.renderRichContent(accountContent, accountFormat);
+      accountCardHtml = `
+        <section class="glass-card account-card">
+          <div class="account-card-badge">账号服务</div>
+          <div class="account-card-main">
+            <div class="account-card-rich rich-content">${accountRendered}</div>
+          </div>
+        </section>
+      `;
     }
 
-    .section-title {
-      font-size: 0.95rem;
-      font-weight: 800;
-      color: #7dd3fc;
-      margin-bottom: 15px;
-      margin-left: 6px;
-      text-transform: uppercase;
-      letter-spacing: .06em;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.35);
+    // 页面中部推广卡（域名）
+    let promoHtml = '';
+    if (promoEnabled && promoUrl) {
+      const promoRendered = this.renderRichContent(promoDesc, this.config.promo_format);
+      promoHtml = `
+        <a href="${this.escapeAttr(promoUrl)}"
+           target="_blank"
+           rel="noopener noreferrer"
+           class="glass-card promo-card">
+          <div class="promo-badge">${this.escapeHtml(promoBadge)}</div>
+          <div class="promo-content">
+            <div class="promo-title">${this.escapeHtml(promoTitle)}</div>
+            <div class="promo-desc rich-content">${promoRendered}</div>
+          </div>
+        </a>
+      `;
     }
 
-    .search-container { margin-bottom: 28px; width: 100%; }
-    .search-wrap { position: relative; width: 100%; max-width: 560px; margin: 0 auto; }
-    .search-icon {
-      position: absolute;
-      left: 18px;
-      top: 50%;
-      transform: translateY(-50%);
-      opacity: .8;
-      font-size: 1rem;
-      pointer-events: none;
-    }
-    .search-box {
-      width: 100%;
-      height: 56px;
-      padding: 0 20px 0 48px;
-      border-radius: 18px;
-      border: 1px solid rgba(255,255,255,0.16);
-      background: rgba(255,255,255,0.14);
-      backdrop-filter: blur(6px);
-      color: white;
-      font-size: 1rem;
-      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 14px rgba(0,0,0,0.10);
-      transition: var(--transition);
-    }
-    .search-box::placeholder { color: rgba(255,255,255,0.64); }
-    .search-box:focus {
-      outline: none;
-      background: rgba(255,255,255,0.2);
-      border-color: rgba(125,211,252,0.4);
-      box-shadow: 0 0 0 4px rgba(56,189,248,0.10), 0 8px 18px rgba(0,0,0,0.12);
-    }
-
-    .grid-resources {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-      gap: 18px;
-      margin-bottom: 40px;
-    }
-    .resource-card-wrap {
-      display: flex;
-      position: relative;
-      overflow: hidden;
-      min-height: 112px;
-      opacity: 1;
-      transform: none;
-      animation: none;
-    }
-    .resource-card-wrap:hover, .partner-card:hover {
-      background: rgba(255,255,255,0.22);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-hover);
-    }
-    .resource-main-link {
-      flex: 1;
-      display: flex;
-      align-items: center;
-      gap: 16px;
-      text-decoration: none;
-      color: white;
-      padding: 22px 20px;
-      text-shadow: 0 2px 4px rgba(0,0,0,0.42);
-    }
-    .card-icon {
-      width: 52px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 2.2rem;
-      flex-shrink: 0;
-      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
-    }
-    .card-info h3 {
-      font-size: 1.06rem;
-      font-weight: 700;
-      line-height: 1.35;
-      margin-bottom: 6px;
-    }
-    .card-info p {
-      font-size: 0.84rem;
-      color: rgba(252,211,77,.92);
-      font-weight: 500;
-      line-height: 1.5;
-    }
-
-    .tag-special {
-      display: inline-flex;
-      align-items: center;
-      margin-left: 8px;
-      padding: 3px 8px;
-      font-size: 0.65rem;
-      font-weight: 800;
-      color: #ecfdf5;
-      background: linear-gradient(135deg, rgba(16,185,129,0.78), rgba(5,150,105,0.88));
-      border: 1px solid rgba(52,211,153,0.35);
-      border-radius: 999px;
-      box-shadow: 0 2px 8px rgba(16,185,129,0.18);
-      transform: translateY(-1px);
-      text-shadow: 0 1px 2px rgba(0,0,0,0.35);
-      white-space: nowrap;
-    }
-    .tag-backup {
-      position: absolute;
-      top: 12px;
-      right: 12px;
-      padding: 4px 9px;
-      border-radius: 999px;
-      background: rgba(15,23,42,.35);
-      border: 1px solid rgba(255,255,255,.12);
-      font-size: 11px;
-      color: #e2e8f0;
-      text-decoration: none;
-      transition: var(--transition);
-    }
-    .tag-backup:hover {
-      background: rgba(139,92,246,.88);
-      color: white;
-    }
-
-    .grid-partners {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
-      gap: 14px;
-      margin-bottom: 40px;
-    }
-    .partner-card {
-      text-decoration: none;
-      color: #fff;
-      text-align: center;
-      padding: 16px 14px;
-      font-size: 0.92rem;
-      font-weight: 600;
-      border-radius: 16px;
-      text-shadow: 0 1px 3px rgba(0,0,0,0.45);
-      transition: var(--transition);
-      min-height: 68px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      opacity: 1;
-      transform: none;
-      animation: none;
-    }
-
-    .fab-container {
-      position: fixed;
-      bottom: 28px;
-      left: 50%;
-      transform: translateX(-50%);
-      display: flex;
-      gap: 12px;
-      z-index: 100;
-      flex-wrap: wrap;
-      justify-content: center;
-    }
-    .fab-btn {
-      padding: 11px 18px;
-      border-radius: 16px;
-      text-decoration: none;
-      font-weight: 700;
-      color: white;
-      transition: var(--transition);
-      box-shadow: 0 6px 16px rgba(0,0,0,0.16);
-      white-space: nowrap;
-      border: 1px solid rgba(255,255,255,.12);
-      backdrop-filter: blur(6px);
-      -webkit-backdrop-filter: blur(6px);
-    }
-    .fab-telegram { background: rgba(139,92,246,.66); }
-    .fab-mail { background: rgba(59,130,246,.66); }
-    .fab-push { background: rgba(244,63,94,.66); }
-    .fab-btn:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 10px 20px rgba(0,0,0,.20);
-    }
-
-    .theme-toggle {
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      width: 44px;
-      height: 44px;
-      border-radius: 14px;
-      background: rgba(255,255,255,0.16);
-      backdrop-filter: blur(6px);
-      border: 1px solid rgba(255,255,255,0.14);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      cursor: pointer;
-      z-index: 100;
-      color: white;
-    }
-
-    .no-result {
-      text-align: center;
-      padding: 40px 0;
-      color: var(--text-sub);
-      font-size: 1.06rem;
-      display: none;
-    }
-
-    .notice-card {
-      margin-bottom: 22px;
-      padding: 22px 28px;
-      text-align: left;
-      background: linear-gradient(135deg, rgba(244, 63, 94, 0.10) 0%, rgba(30, 41, 59, 0.32) 100%);
-      border-left: 4px solid #fb7185;
-    }
-    .notice-title {
-      font-size: 1.1rem;
-      font-weight: 800;
-      background: linear-gradient(to right, #fb7185, #c084fc);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      margin-bottom: 15px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      text-shadow: none;
-    }
-    .notice-title span { -webkit-text-fill-color: initial; }
-    .notice-content {
-      font-size: 0.95rem;
-      line-height: 1.8;
-      color: rgba(255, 255, 255, 0.92);
-    }
-
-    .promo-card,
-    .account-promo-card {
-      display: flex;
-      align-items: center;
-      gap: 18px;
-      margin-bottom: 22px;
-      padding: 22px 26px;
-      text-decoration: none;
-      color: var(--text-main);
-      box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
-    }
-    .promo-card {
-      background: linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(59,130,246,0.10) 100%);
-      border: 1px solid rgba(125, 211, 252, 0.22);
-    }
-    .account-promo-card {
-      background: linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(16,185,129,0.10) 50%, rgba(59,130,246,0.10) 100%);
-      border: 1px solid rgba(110,231,183,0.22);
-    }
-    .promo-card:hover,
-    .account-promo-card:hover {
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-hover);
-      background-color: rgba(255,255,255,0.18);
-    }
-
-    .promo-badge,
-    .account-promo-badge {
-      flex-shrink: 0;
-      min-width: 138px;
-      padding: 12px 16px;
-      border-radius: 999px;
-      text-align: center;
-      font-size: 0.95rem;
-      font-weight: 800;
-      border: 1px solid rgba(255,255,255,0.22);
-    }
-    .promo-badge {
-      color: #dbeafe;
-      background: linear-gradient(135deg, rgba(255,255,255,0.28), rgba(191,219,254,0.18));
-    }
-    .account-promo-badge {
-      color: #d1fae5;
-      background: linear-gradient(135deg, rgba(255,255,255,0.24), rgba(16,185,129,0.18));
-    }
-
-    .promo-title,
-    .account-promo-title {
-      font-size: 1rem;
-      font-weight: 800;
-      color: #ffffff;
-      line-height: 1.45;
-      margin-bottom: 4px;
-    }
-    .promo-desc,
-    .account-promo-desc {
-      font-size: 0.95rem;
-      color: rgba(226, 232, 240, 0.92);
-      line-height: 1.6;
-    }
-
-    .rich-content p { margin: 0 0 8px; }
-    .rich-content p:last-child { margin-bottom: 0; }
-
-    .account-promo-desc h1,
-    .account-promo-desc h2,
-    .account-promo-desc h3 {
-      margin: 0 0 10px;
-      line-height: 1.35;
-      color: #fff;
-    }
-    .account-promo-desc h1 { font-size: 1.15rem; }
-    .account-promo-desc h2 { font-size: 1.08rem; }
-    .account-promo-desc h3 { font-size: 1rem; }
-    .account-promo-desc p {
-      margin: 0 0 10px;
-      font-size: 0.95rem;
-      line-height: 1.75;
-      color: rgba(255,255,255,.92);
-    }
-    .account-promo-desc ul {
-      margin: 0 0 12px 18px;
-      padding: 0;
-    }
-    .account-promo-desc li {
-      margin: 6px 0;
-      font-size: 0.92rem;
-      color: rgba(255,255,255,.9);
-    }
-    .account-promo-desc code {
-      padding: 2px 6px;
-      border-radius: 8px;
-      background: rgba(255,255,255,.08);
-      border: 1px solid rgba(255,255,255,.12);
-    }
-    .account-promo-desc a {
-      color: #93c5fd;
-      word-break: break-all;
-    }
-    .account-promo-desc .ad-badge {
-      display: inline-flex;
-      align-items: center;
-      padding: 4px 10px;
-      margin-bottom: 10px;
-      font-size: .72rem;
-      font-weight: 800;
-      border-radius: 999px;
-      background: rgba(16,185,129,.18);
-      border: 1px solid rgba(16,185,129,.35);
-      color: #d1fae5;
-    }
-    .account-promo-desc .ad-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      margin-top: 10px;
-      padding: 10px 14px;
-      border-radius: 12px;
-      text-decoration: none;
-      color: #fff;
-      font-weight: 800;
-      background: linear-gradient(135deg,#3b82f6,#8b5cf6);
-      border: 1px solid rgba(255,255,255,.12);
-      box-shadow: 0 8px 18px rgba(59,130,246,.22);
-    }
-    .account-promo-desc .ad-btn:hover {
-      transform: translateY(-1px);
-    }
-
-    @media (max-width: 768px) {
-      .header h1 { font-size: 2.2rem; }
-      .container { padding: 0 10px; }
-      .grid-resources { grid-template-columns: 1fr; gap: 15px; }
-      .grid-partners { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
-      .fab-container { bottom: 18px; gap: 10px; width: calc(100% - 20px); }
-      .fab-btn { padding: 10px 14px; font-size: 0.85rem; }
-      .notice-card { padding: 16px 18px; }
-      .promo-card,
-      .account-promo-card {
+    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${this.escapeHtml(this.config.title)}</title><style>
+      :root {
+        --glass: rgba(255,255,255,0.14);
+        --border: rgba(255,255,255,0.16);
+        --text-main: #fff;
+        --text-sub: rgba(226,232,240,0.92);
+        --warning: #fcd34d;
+        --primary: #8b5cf6;
+        --primary-2: #38bdf8;
+        --backdrop-blur: 12px;
+        --shadow-soft: 0 8px 20px rgba(15,23,42,.14);
+        --shadow-hover: 0 14px 28px rgba(15,23,42,.18);
+        --transition: .22s ease;
+      }
+      .dark-theme {
+        --glass: rgba(15,23,42,0.82);
+        --border: rgba(255,255,255,0.10);
+        --text-main: #f8fafc;
+        --text-sub: rgba(226,232,240,.88);
+      }
+      * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+      body {
+        font-family: ${this.FONT_STACK};
+        color: var(--text-main);
+        ${this.getBgShellStyle()}
+        min-height: 100vh;
+        display: flex;
         flex-direction: column;
-        align-items: flex-start;
-        gap: 14px;
-        padding: 18px;
+        align-items: center;
+        padding: 40px 20px 100px;
+        position: relative;
       }
-      .promo-badge,
-      .account-promo-badge {
-        min-width: auto;
-        width: auto;
-        max-width: 100%;
-        font-size: 0.9rem;
+      .container { width: 100%; max-width: 1200px; }
+      .glass-card {
+        background: linear-gradient(135deg, rgba(255,255,255,.14), rgba(255,255,255,.08));
+        backdrop-filter: blur(var(--backdrop-blur));
+        -webkit-backdrop-filter: blur(var(--backdrop-blur));
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        box-shadow: var(--shadow-soft);
+        transition: var(--transition);
       }
-    }
-  </style>
-  <script>
-    function initSearch() {
-      const searchBox = document.querySelector('.search-box');
-      const gridResources = document.querySelector('.grid-resources');
-      const noResult = document.createElement('div');
-      noResult.className = 'no-result';
-      noResult.innerHTML = '😕 暂无匹配结果';
-      gridResources.after(noResult);
-
-      if (!searchBox) return;
-
-      let timer = null;
-      searchBox.addEventListener('keydown', e => e.key === 'Enter' && e.preventDefault());
-      searchBox.addEventListener('input', function(e) {
-        clearTimeout(timer);
-        timer = setTimeout(() => {
-          const searchTerm = e.target.value.toLowerCase().trim();
-          const cards = document.querySelectorAll('.resource-card-wrap, .partner-card');
-          let hasMatch = false;
-          cards.forEach(card => {
-            const isMatch = !searchTerm || card.textContent.toLowerCase().includes(searchTerm);
-            card.style.display = isMatch ? '' : 'none';
-            if (isMatch) hasMatch = true;
-          });
-          noResult.style.display = searchTerm && !hasMatch ? 'block' : 'none';
-        }, 120);
-      });
-    }
-
-    function initThemeToggle() {
-      const themeBtn = document.querySelector('.theme-toggle');
-      if (!themeBtn) return;
-
-      const toggleTheme = () => {
-        document.body.classList.toggle('dark-theme');
-        const isDark = document.body.classList.contains('dark-theme');
-        localStorage.setItem('theme', isDark ? 'dark' : 'light');
-        themeBtn.textContent = isDark ? '☀️' : '🌙';
-      };
-
-      themeBtn.addEventListener('click', toggleTheme);
-
-      const savedTheme = localStorage.getItem('theme');
-      const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
-        document.body.classList.add('dark-theme');
-        themeBtn.textContent = '☀️';
-      } else {
-        themeBtn.textContent = '🌙';
+      .dark-theme .glass-card {
+        background: linear-gradient(135deg, rgba(15,23,42,.82), rgba(15,23,42,.68));
       }
-    }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      initSearch();
-      initThemeToggle();
-    });
-  </script></head><body>
-    <button class="theme-toggle" title="切换主题">🌙</button>
-    <div class="container">
-      <div class="header glass-card">
-        <h1>${this.escapeHtml(this.config.title)}</h1>
-        <p>${this.escapeHtml(this.config.subtitle)}</p>
-      </div>
+      .header { text-align: center; padding: 48px 28px; margin-bottom: 28px; }
+      .header h1 {
+        font-size: clamp(2.1rem, 5vw, 3.3rem);
+        font-weight: 800;
+        line-height: 1.08;
+        letter-spacing: -0.035em;
+        margin-bottom: 12px;
+        text-shadow: 0 6px 18px rgba(0,0,0,0.28);
+      }
+      .header p {
+        max-width: 720px; margin: 0 auto; font-size: 1rem; line-height: 1.75; color: var(--text-sub);
+      }
 
-      <div class="search-container">
-        <div class="search-wrap">
-          <span class="search-icon">🔎</span>
-          <input type="text" class="search-box" placeholder="搜索导航项目..." />
-        </div>
-      </div>
+      .section-title {
+        font-size: 0.95rem; font-weight: 800; color: #7dd3fc; margin-bottom: 15px; margin-left: 6px;
+        text-transform: uppercase; letter-spacing: .06em; text-shadow: 0 2px 4px rgba(0,0,0,0.35);
+      }
 
-      ${noticeHtml}
-      ${promoHtml}
-      ${accountCardHtml}
+      .search-container { margin-bottom: 28px; width: 100%; }
+      .search-wrap { position: relative; width: 100%; max-width: 560px; margin: 0 auto; }
+      .search-icon { position: absolute; left: 18px; top: 50%; transform: translateY(-50%); opacity: .8; font-size: 1rem; pointer-events: none; }
+      .search-box {
+        width: 100%; height: 56px; padding: 0 20px 0 48px; border-radius: 18px;
+        border: 1px solid rgba(255,255,255,0.16); background: rgba(255,255,255,0.14);
+        backdrop-filter: blur(6px); color: white; font-size: 1rem;
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.05), 0 4px 14px rgba(0,0,0,0.10);
+        transition: var(--transition);
+      }
+      .search-box::placeholder { color: rgba(255,255,255,0.64); }
+      .search-box:focus {
+        outline: none; background: rgba(255,255,255,0.2); border-color: rgba(125,211,252,0.4);
+        box-shadow: 0 0 0 4px rgba(56,189,248,0.10), 0 8px 18px rgba(0,0,0,0.12);
+      }
 
-      <div class="section-title">💎 精选</div>
-      <div class="grid-resources">${cardsHtml}</div>
+      .grid-resources {
+        display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 18px; margin-bottom: 40px;
+      }
+      .resource-card-wrap {
+        display: flex; position: relative; overflow: hidden; min-height: 112px;
+        opacity: 1; transform: none; animation: none;
+      }
+      .resource-card-wrap:hover, .partner-card:hover {
+        background: rgba(255,255,255,0.22); transform: translateY(-2px); box-shadow: var(--shadow-hover);
+      }
+      .resource-main-link {
+        flex: 1; display: flex; align-items: center; gap: 16px; text-decoration: none;
+        color: white; padding: 22px 20px; text-shadow: 0 2px 4px rgba(0,0,0,0.42);
+      }
+      .card-icon {
+        width: 52px; display: flex; align-items: center; justify-content: center; font-size: 2.2rem;
+        flex-shrink: 0; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.25));
+      }
+      .card-info h3 { font-size: 1.06rem; font-weight: 700; line-height: 1.35; margin-bottom: 6px; }
+      .card-info p { font-size: 0.84rem; color: rgba(252,211,77,.92); font-weight: 500; line-height: 1.5; }
 
-      <div class="section-title">🔗 友链</div>
-      <div class="grid-partners">${friendsHtml}</div>
-    </div>
+      .tag-special {
+        display: inline-flex; align-items: center; margin-left: 8px; padding: 3px 8px; font-size: 0.65rem;
+        font-weight: 800; color: #ecfdf5; background: linear-gradient(135deg, rgba(16,185,129,0.78), rgba(5,150,105,0.88));
+        border: 1px solid rgba(52,211,153,0.35); border-radius: 999px; box-shadow: 0 2px 8px rgba(16,185,129,0.18);
+        transform: translateY(-1px); text-shadow: 0 1px 2px rgba(0,0,0,0.35); white-space: nowrap;
+      }
+      .tag-backup {
+        position: absolute; top: 12px; right: 12px; padding: 4px 9px; border-radius: 999px;
+        background: rgba(15,23,42,.35); border: 1px solid rgba(255,255,255,.12);
+        font-size: 11px; color: #e2e8f0; text-decoration: none; transition: var(--transition);
+      }
+      .tag-backup:hover { background: rgba(139,92,246,.88); color: white; }
 
-    ${fabHtml}
-    ${this.render_BgRuntimeScript()}
-  </body></html>`;
+      .grid-partners {
+        display: grid; grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 14px; margin-bottom: 40px;
+      }
+      .partner-card {
+        text-decoration: none; color: #fff; text-align: center; padding: 16px 14px; font-size: 0.92rem; font-weight: 600;
+        border-radius: 16px; text-shadow: 0 1px 3px rgba(0,0,0,0.45); transition: var(--transition); min-height: 68px;
+        display: flex; align-items: center; justify-content: center; opacity: 1; transform: none; animation: none;
+      }
+
+      .fab-container {
+        position: fixed; bottom: 28px; left: 50%; transform: translateX(-50%); display: flex; gap: 12px;
+        z-index: 100; flex-wrap: wrap; justify-content: center;
+      }
+      .fab-btn {
+        padding: 11px 18px; border-radius: 16px; text-decoration: none; font-weight: 700; color: white;
+        transition: var(--transition); box-shadow: 0 6px 16px rgba(0,0,0,0.16); white-space: nowrap;
+        border: 1px solid rgba(255,255,255,.12); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px);
+      }
+      .fab-telegram { background: rgba(139,92,246,.66); }
+      .fab-mail { background: rgba(59,130,246,.66); }
+      .fab-push { background: rgba(244,63,94,.66); }
+      .fab-btn:hover { transform: translateY(-2px); box-shadow: 0 10px 20px rgba(0,0,0,.20); }
+
+      .theme-toggle {
+        position: fixed; top: 20px; right: 20px; width: 44px; height: 44px; border-radius: 14px;
+        background: rgba(255,255,255,0.16); backdrop-filter: blur(6px); border: 1px solid rgba(255,255,255,0.14);
+        display: flex; align-items: center; justify-content: center; cursor: pointer; z-index: 100; color: white;
+      }
+
+      .no-result { text-align: center; padding: 40px 0; color: var(--text-sub); font-size: 1.06rem; display: none; }
+
+      .notice-card {
+        margin-bottom: 22px; padding: 22px 28px; text-align: left;
+        background: linear-gradient(135deg, rgba(244, 63, 94, 0.10) 0%, rgba(30, 41, 59, 0.32) 100%);
+        border-left: 4px solid #fb7185;
+      }
+      .notice-title {
+        font-size: 1.1rem; font-weight: 800; background: linear-gradient(to right, #fb7185, #c084fc);
+        -webkit-background-clip: text; -webkit-text-fill-color: transparent; margin-bottom: 15px;
+        display: flex; align-items: center; gap: 10px; text-shadow: none;
+      }
+      .notice-title span { -webkit-text-fill-color: initial; }
+      .notice-content { font-size: 0.95rem; line-height: 1.8; color: rgba(255, 255, 255, 0.92); }
+
+      /* ✅ 中间账号卡片 */
+      .account-card {
+  display: flex;
+  align-items: center;
+  gap: 18px;
+  margin-bottom: 16px;
+  padding: 14px 18px;
+  background: linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(59,130,246,0.10) 100%);
+  border: 1px solid rgba(110,231,183,0.22);
 }
+.account-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-hover);
+}
+.account-card-badge {
+  flex-shrink: 0;
+  min-width: 138px;
+  padding: 12px 16px;
+  border-radius: 999px;
+  text-align: center;
+  font-size: 0.95rem;
+  font-weight: 800;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d1fae5;
+  background: linear-gradient(135deg, rgba(16,185,129,.28), rgba(59,130,246,.18));
+  border: 1px solid rgba(167,243,208,.24);
+}
+.account-card-main {
+  flex: 1;
+  min-width: 0;
+}
+.account-card-rich h1,
+.account-card-rich h2,
+.account-card-rich h3 {
+  margin: 0 0 6px;
+  line-height: 1.25;
+  color: #fff;
+}
+.account-card-rich h1 { font-size: 1rem; }
+.account-card-rich h2 { font-size: 0.96rem; }
+.account-card-rich h3 { font-size: 0.92rem; }
+.account-card-rich p {
+  margin: 0 0 5px;
+  font-size: 0.86rem;
+  color: rgba(226, 232, 240, 0.92);
+  line-height: 1.5;
+}
+.account-card-rich p:last-child { margin-bottom: 0; }
+.account-card-rich ul { margin: 0 0 6px 18px; padding: 0; }
+.account-card-rich li {
+  margin: 3px 0;
+  font-size: 0.84rem;
+  color: rgba(226,232,240,0.92);
+}
+.account-card-rich code {
+  padding: 1px 5px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.12);
+}
+.account-card-rich a {
+  color: #93c5fd;
+  word-break: break-all;
+}
+.account-card-rich .ad-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  margin-bottom: 6px;
+  font-size: .66rem;
+  font-weight: 800;
+  border-radius: 999px;
+  background: rgba(16,185,129,.18);
+  border: 1px solid rgba(16,185,129,.35);
+  color: #d1fae5;
+}
+.account-card-rich .ad-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 6px;
+  padding: 7px 11px;
+  border-radius: 10px;
+  text-decoration: none;
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.82rem;
+  background: linear-gradient(135deg,#3b82f6,#8b5cf6);
+  border: 1px solid rgba(255,255,255,.12);
+  box-shadow: 0 6px 14px rgba(59,130,246,.18);
+}
+
+      .promo-card {
+        display: flex; align-items: center; gap: 18px; margin-bottom: 30px; padding: 22px 26px; text-decoration: none;
+        color: var(--text-main); background: linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(59,130,246,0.10) 100%);
+        border: 1px solid rgba(125, 211, 252, 0.22); box-shadow: 0 6px 18px rgba(15, 23, 42, 0.12);
+      }
+      .promo-card:hover { transform: translateY(-2px); }
+      .promo-badge {
+        flex-shrink: 0; min-width: 138px; padding: 12px 16px; border-radius: 999px; text-align: center;
+        font-size: 0.95rem; font-weight: 800; color: #dbeafe; background: linear-gradient(135deg, rgba(255,255,255,0.28), rgba(191,219,254,0.18));
+        border: 1px solid rgba(255,255,255,0.22);
+      }
+      .promo-title { font-size: 1rem; font-weight: 800; color: #ffffff; line-height: 1.45; }
+      .promo-desc { font-size: 0.95rem; color: rgba(226, 232, 240, 0.92); line-height: 1.6; }
+
+      .rich-content p { margin: 0 0 8px; }
+      .rich-content p:last-child { margin-bottom: 0; }
+
+      @media (max-width: 768px) {
+        .header h1 { font-size: 2.2rem; }
+        .container { padding: 0 10px; }
+        .grid-resources { grid-template-columns: 1fr; gap: 15px; }
+        .grid-partners { grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+        .fab-container { bottom: 18px; gap: 10px; width: calc(100% - 20px); }
+        .fab-btn { padding: 10px 14px; font-size: 0.85rem; }
+        .notice-card { padding: 16px 18px; }
+        .promo-card,
+        .account-card {
+          flex-direction: column;
+          align-items: flex-start;
+          gap: 14px;
+          padding: 18px;
+        }
+        .promo-badge,
+        .account-card-badge {
+          min-width: auto;
+          width: auto;
+          max-width: 100%;
+          font-size: 0.9rem;
+        }
+      }
+    </style>
+    <script>
+      function initSearch() {
+        const searchBox = document.querySelector('.search-box');
+        const gridResources = document.querySelector('.grid-resources');
+        const noResult = document.createElement('div');
+        noResult.className = 'no-result';
+        noResult.innerHTML = '😕 暂无匹配结果';
+        gridResources.after(noResult);
+
+        if (!searchBox) return;
+
+        let timer = null;
+        searchBox.addEventListener('keydown', e => e.key === 'Enter' && e.preventDefault());
+        searchBox.addEventListener('input', function(e) {
+          clearTimeout(timer);
+          timer = setTimeout(() => {
+            const searchTerm = e.target.value.toLowerCase().trim();
+            const cards = document.querySelectorAll('.resource-card-wrap, .partner-card');
+            let hasMatch = false;
+            cards.forEach(card => {
+              const isMatch = !searchTerm || card.textContent.toLowerCase().includes(searchTerm);
+              card.style.display = isMatch ? '' : 'none';
+              if (isMatch) hasMatch = true;
+            });
+            noResult.style.display = searchTerm && !hasMatch ? 'block' : 'none';
+          }, 120);
+        });
+      }
+
+      function initThemeToggle() {
+        const themeBtn = document.querySelector('.theme-toggle');
+        if (!themeBtn) return;
+
+        const toggleTheme = () => {
+          document.body.classList.toggle('dark-theme');
+          const isDark = document.body.classList.contains('dark-theme');
+          localStorage.setItem('theme', isDark ? 'dark' : 'light');
+          themeBtn.textContent = isDark ? '☀️' : '🌙';
+        };
+
+        themeBtn.addEventListener('click', toggleTheme);
+
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+          document.body.classList.add('dark-theme');
+          themeBtn.textContent = '☀️';
+        } else {
+          themeBtn.textContent = '🌙';
+        }
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        initSearch();
+        initThemeToggle();
+      });
+    </script></head><body>
+      <button class="theme-toggle" title="切换主题">🌙</button>
+      <div class="container">
+        <div class="header glass-card">
+          <h1>${this.escapeHtml(this.config.title)}</h1>
+          <p>${this.escapeHtml(this.config.subtitle)}</p>
+        </div>
+
+        <div class="search-container">
+          <div class="search-wrap">
+            <span class="search-icon">🔎</span>
+            <input type="text" class="search-box" placeholder="搜索导航项目..." />
+          </div>
+        </div>
+
+        ${noticeHtml}
+        ${accountCardHtml}
+        ${promoHtml}
+
+        <div class="section-title">💎 精选</div>
+        <div class="grid-resources">${cardsHtml}</div>
+
+        <div class="section-title">🔗 友链</div>
+        <div class="grid-partners">${friendsHtml}</div>
+      </div>
+
+      ${fabHtml}
+      ${this.render_BgRuntimeScript()}
+    </body></html>`;
+  }
 
     render_AdminDashboard(dbData, m) {
     const { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode } = dbData;
