@@ -1139,166 +1139,174 @@ class NooMiNav {
   </body></html>`;
 }
 
-  render_AdminDashboard(dbData, m) {
-  const { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode } = dbData;
-  const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
-  const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
-  const activeIds = new Set([...safeLinks.map(i => i.id), ...safeFriends.map(i => i.id)]);
+    render_AdminDashboard(dbData, m) {
+    const { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode } = dbData;
+    const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
+    const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
+    const activeIds = new Set([...safeLinks.map(i => i.id), ...safeFriends.map(i => i.id)]);
 
-  let historyTotal = 0;
-  for (let v of statsMap.values()) {
-    if (activeIds.has(v.id)) historyTotal += (v.total_clicks || 0);
-  }
-
-  let viewTotalDenominator = 0;
-  if (isDayMode) {
-    for (let c of monthContextMap.values()) viewTotalDenominator += c;
-  } else {
-    for (let c of periodMap.values()) viewTotalDenominator += c;
-  }
-
-  let prevDay = m, nextDay = m, prevMonthStr = "", nextMonthStr = "";
-  try {
-    if (isDayMode) {
-      const d = new Date(m);
-      d.setDate(d.getDate() - 1);
-      prevDay = d.toISOString().split('T')[0];
-      d.setDate(d.getDate() + 2);
-      nextDay = d.toISOString().split('T')[0];
+    let historyTotal = 0;
+    for (const v of statsMap.values()) {
+      if (activeIds.has(v.id)) historyTotal += (v.total_clicks || 0);
     }
-    const currentY_int = parseInt(m.substring(0, 4)), currentM_int = parseInt(m.substring(5, 7));
-    let prevM_Y = currentY_int, prevM_M = currentM_int - 1;
-    if (prevM_M === 0) { prevM_Y -= 1; prevM_M = 12; }
-    prevMonthStr = `${prevM_Y}_${String(prevM_M).padStart(2, '0')}`;
-    let nextM_Y = currentY_int, nextM_M = currentM_int + 1;
-    if (nextM_M === 13) { nextM_Y += 1; nextM_M = 1; }
-    nextMonthStr = `${nextM_Y}_${String(nextM_M).padStart(2, '0')}`;
-  } catch (e) {}
 
-  const buildCard = (id, name, emoji, isMini) => {
-    const stat = statsMap.get(id) || { total_clicks: 0, last_time: '' };
-    const realTodayVal = dailyMap.get(id) || 0;
-    const selectedTargetVal = periodMap.get(id) || 0;
-    const monthContextVal = monthContextMap.get(id) || 0;
-    let col2Label, col2Val, col3Label, col3Val, progressVal = 0;
-
+    let viewTotalDenominator = 0;
     if (isDayMode) {
-      col2Label = (m === this.time.todayStr) ? "今日" : "当日";
-      col2Val = selectedTargetVal;
-      col3Label = "当月";
-      col3Val = monthContextVal;
-      progressVal = viewTotalDenominator > 0 ? ((monthContextVal / viewTotalDenominator) * 100).toFixed(1) : 0;
+      for (const c of monthContextMap.values()) viewTotalDenominator += c;
     } else {
-      col2Label = "今日";
-      col2Val = realTodayVal;
-      col3Label = (m === this.time.dateKey) ? "本月" : "当月";
-      col3Val = selectedTargetVal;
-      progressVal = viewTotalDenominator > 0 ? ((selectedTargetVal / viewTotalDenominator) * 100).toFixed(1) : 0;
+      for (const c of periodMap.values()) viewTotalDenominator += c;
     }
 
-    let timeDisplay = stat.last_time || '暂无';
-    let timeIcon = '🕒';
-    if (timeDisplay !== '暂无') {
+    let prevDay = m, nextDay = m, prevMonthStr = "", nextMonthStr = "";
+    try {
       if (isDayMode) {
-        timeDisplay = timeDisplay.split(' ')[1] || timeDisplay;
-      } else {
-        timeDisplay = timeDisplay.split(' ')[0].substring(5);
-        timeIcon = '📅';
+        const d = new Date(m);
+        d.setDate(d.getDate() - 1);
+        prevDay = d.toISOString().split('T')[0];
+        d.setDate(d.getDate() + 2);
+        nextDay = d.toISOString().split('T')[0];
       }
-    }
+      const currentY_int = parseInt(m.substring(0, 4));
+      const currentM_int = parseInt(m.substring(5, 7));
 
-    const safeId = this.escapeAttr(id || '');
-    const safeM = this.escapeAttr(m || '');
-    const safeName = this.escapeHtml(name || '');
-    const encodedName = encodeURIComponent(name || '');
+      let prevM_Y = currentY_int, prevM_M = currentM_int - 1;
+      if (prevM_M === 0) {
+        prevM_Y -= 1;
+        prevM_M = 12;
+      }
+      prevMonthStr = `${prevM_Y}_${String(prevM_M).padStart(2, '0')}`;
 
-    if (isMini) {
-      return `<div class="mini-card" onclick="openLog('${safeId}','${safeM}','${encodedName}')">
-                <div class="mini-top">
-                  <span class="mini-name" title="${safeName}">${safeName}</span>
-                  <span class="mini-badge">${selectedTargetVal}</span>
+      let nextM_Y = currentY_int, nextM_M = currentM_int + 1;
+      if (nextM_M === 13) {
+        nextM_Y += 1;
+        nextM_M = 1;
+      }
+      nextMonthStr = `${nextM_Y}_${String(nextM_M).padStart(2, '0')}`;
+    } catch (e) {}
+
+    const buildCard = (id, name, emoji, isMini) => {
+      const stat = statsMap.get(id) || { total_clicks: 0, last_time: '' };
+      const realTodayVal = dailyMap.get(id) || 0;
+      const selectedTargetVal = periodMap.get(id) || 0;
+      const monthContextVal = monthContextMap.get(id) || 0;
+      let col2Label, col2Val, col3Label, col3Val, progressVal = 0;
+
+      if (isDayMode) {
+        col2Label = (m === this.time.todayStr) ? "今日" : "当日";
+        col2Val = selectedTargetVal;
+        col3Label = "当月";
+        col3Val = monthContextVal;
+        progressVal = viewTotalDenominator > 0 ? ((monthContextVal / viewTotalDenominator) * 100).toFixed(1) : 0;
+      } else {
+        col2Label = "今日";
+        col2Val = realTodayVal;
+        col3Label = (m === this.time.dateKey) ? "本月" : "当月";
+        col3Val = selectedTargetVal;
+        progressVal = viewTotalDenominator > 0 ? ((selectedTargetVal / viewTotalDenominator) * 100).toFixed(1) : 0;
+      }
+
+      let timeDisplay = stat.last_time || '暂无';
+      let timeIcon = '🕒';
+      if (timeDisplay !== '暂无') {
+        if (isDayMode) {
+          timeDisplay = timeDisplay.split(' ')[1] || timeDisplay;
+        } else {
+          timeDisplay = timeDisplay.split(' ')[0].substring(5);
+          timeIcon = '📅';
+        }
+      }
+
+      const safeId = this.escapeAttr(id || '');
+      const safeM = this.escapeAttr(m || '');
+      const safeName = this.escapeHtml(name || '');
+      const encodedName = encodeURIComponent(name || '');
+
+      if (isMini) {
+        return `<div class="mini-card" onclick="openLog('${safeId}','${safeM}','${encodedName}')">
+                  <div class="mini-top">
+                    <span class="mini-name" title="${safeName}">${safeName}</span>
+                    <span class="mini-badge">${selectedTargetVal}</span>
+                  </div>
+                  <div class="mini-meta">${this.escapeHtml(timeDisplay)}</div>
+                </div>`;
+      }
+
+      return `<div class="stat-card" onclick="openLog('${safeId}','${safeM}','${encodedName}')">
+              <div class="stat-top">
+                <div class="stat-title-wrap">
+                  <span class="stat-emoji">${this.escapeHtml(emoji || '🔗')}</span>
+                  <span class="stat-title">${safeName}</span>
                 </div>
-                <div class="mini-meta">${this.escapeHtml(timeDisplay)}</div>
-              </div>`;
+                <span class="stat-pct">${progressVal}%</span>
+              </div>
+              <div class="stat-metrics">
+                <div class="metric">
+                  <span class="metric-label">历史</span>
+                  <span class="metric-value">${stat.total_clicks || 0}</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">${col2Label}</span>
+                  <span class="metric-value metric-gold">${col2Val}</span>
+                </div>
+                <div class="metric">
+                  <span class="metric-label">${col3Label}</span>
+                  <span class="metric-value metric-blue">${col3Val}</span>
+                </div>
+              </div>
+              <div class="progress"><div style="width:${progressVal}%"></div></div>
+              <div class="stat-foot">${timeIcon} ${this.escapeHtml(timeDisplay)}</div>
+            </div>`;
+    };
+
+    const linkHtml = safeLinks.map(i => buildCard(i.id, i.name, i.emoji, false)).join('');
+    const friendHtml = safeFriends.map(i => buildCard(i.id, i.name, '', true)).join('');
+
+    const sysSettings = {
+      admin_pass: this.config.admin_pass,
+      title: this.config.title,
+      subtitle: this.config.subtitle,
+      img: this.dbSettings.img || this.env.img || "",
+      contact_url: this.config.contact_url,
+      mail: this.config.mail,
+      push: this.dbSettings.push || this.env.push || "",
+      host: this.dbSettings.host || this.env.host || "",
+      notice: this.config.notice,
+
+      promo_enable: this.config.promo_enable,
+      promo_badge: this.config.promo_badge,
+      promo_title: this.config.promo_title,
+      promo_desc: this.config.promo_desc,
+      promo_url: this.config.promo_url,
+      promo_format: this.config.promo_format,
+
+      account_enable: this.config.account_enable,
+      account_format: this.config.account_format,
+      account_content: this.config.account_content,
+
+      links: JSON.stringify(this.LINKS_DATA, null, 2),
+      friends: JSON.stringify(this.FRIENDS_DATA, null, 2)
+    };
+
+    let noticeHtmlPreview = '';
+    if (this.config.notice && this.config.notice.trim() !== '') {
+      noticeHtmlPreview = `<div class="panel notice-panel"><div class="panel-head"><span>❤️</span><strong>公告预览</strong></div><div class="notice-preview">${this.config.notice}</div></div>`;
     }
 
-    return `<div class="stat-card" onclick="openLog('${safeId}','${safeM}','${encodedName}')">
-            <div class="stat-top">
-              <div class="stat-title-wrap">
-                <span class="stat-emoji">${this.escapeHtml(emoji || '🔗')}</span>
-                <span class="stat-title">${safeName}</span>
-              </div>
-              <span class="stat-pct">${progressVal}%</span>
-            </div>
-            <div class="stat-metrics">
-              <div class="metric">
-                <span class="metric-label">历史</span>
-                <span class="metric-value">${stat.total_clicks || 0}</span>
-              </div>
-              <div class="metric">
-                <span class="metric-label">${col2Label}</span>
-                <span class="metric-value metric-gold">${col2Val}</span>
-              </div>
-              <div class="metric">
-                <span class="metric-label">${col3Label}</span>
-                <span class="metric-value metric-blue">${col3Val}</span>
-              </div>
-            </div>
-            <div class="progress"><div style="width:${progressVal}%"></div></div>
-            <div class="stat-foot">${timeIcon} ${this.escapeHtml(timeDisplay)}</div>
-          </div>`;
-  };
+    const promoPreview = String(this.config.promo_enable) === '1'
+      ? `<div class="panel notice-panel"><div class="panel-head"><span>📣</span><strong>推广卡预览（首页中部）</strong></div><div class="promo-preview-box"><div class="promo-preview-badge">${this.escapeHtml(this.config.promo_badge || '推广支持')}</div><div class="promo-preview-main"><div class="promo-preview-title">${this.escapeHtml(this.config.promo_title || '推广支持')}</div><div class="promo-preview-desc">${this.renderRichContent(this.config.promo_desc || '', this.config.promo_format)}</div></div></div></div>`
+      : '';
 
-  const linkHtml = safeLinks.map(i => buildCard(i.id, i.name, i.emoji, false)).join('');
-  const friendHtml = safeFriends.map(i => buildCard(i.id, i.name, '', true)).join('');
+    const accountPreview =
+      (String(this.config.account_enable || '0') === '1' && String(this.config.account_content || '').trim())
+        ? `<div class="panel notice-panel">
+             <div class="panel-head"><span>🧾</span><strong>右侧账号广告预览</strong></div>
+             <div class="account-preview-box">
+               <div class="account-preview-rich">${this.renderRichContent(this.config.account_content || '', this.config.account_format || 'markdown')}</div>
+             </div>
+           </div>`
+        : '';
 
-  const sysSettings = {
-  admin_pass: this.config.admin_pass,
-  title: this.config.title,
-  subtitle: this.config.subtitle,
-  img: this.dbSettings.img || this.env.img || "",
-  contact_url: this.config.contact_url,
-  mail: this.config.mail,
-  push: this.dbSettings.push || this.env.push || "",
-  host: this.dbSettings.host || this.env.host || "",
-  notice: this.config.notice,
-
-  promo_enable: this.config.promo_enable,
-  promo_badge: this.config.promo_badge,
-  promo_title: this.config.promo_title,
-  promo_desc: this.config.promo_desc,
-  promo_url: this.config.promo_url,
-  promo_format: this.config.promo_format,
-
-  // ✅ 新版右侧账号广告
-  account_enable: this.config.account_enable,
-  account_format: this.config.account_format,
-  account_content: this.config.account_content,
-
-  links: JSON.stringify(this.LINKS_DATA, null, 2),
-  friends: JSON.stringify(this.FRIENDS_DATA, null, 2)
-};
-
-  let noticeHtmlPreview = '';
-  if (this.config.notice && this.config.notice.trim() !== '') {
-    noticeHtmlPreview = `<div class="panel notice-panel"><div class="panel-head"><span>❤️</span><strong>公告预览</strong></div><div class="notice-preview">${this.config.notice}</div></div>`;
-  }
-
-  const promoPreview = String(this.config.promo_enable) === '1'
-    ? `<div class="panel notice-panel"><div class="panel-head"><span>📣</span><strong>推广卡预览（首页中部）</strong></div><div class="promo-preview-box"><div class="promo-preview-badge">${this.escapeHtml(this.config.promo_badge || '推广支持')}</div><div class="promo-preview-main"><div class="promo-preview-title">${this.escapeHtml(this.config.promo_title || '推广支持')}</div><div class="promo-preview-desc">${this.renderRichContent(this.config.promo_desc || '', this.config.promo_format)}</div></div></div></div>`
-    : '';
-
-  const accountPreview =
-  (String(this.config.account_enable || '0') === '1' && String(this.config.account_content || '').trim())
-    ? `<div class="panel notice-panel">
-         <div class="panel-head"><span>🧾</span><strong>右侧账号广告预览</strong></div>
-         <div class="account-preview-box">
-           <div class="account-preview-rich">${this.renderRichContent(this.config.account_content || '', this.config.account_format || 'markdown')}</div>
-         </div>
-       </div>`
-    : '';
-
-  return `<!DOCTYPE html><html lang="zh-CN"><head>${this.render_Head(this.config.title)}<style>
+    return `<!DOCTYPE html><html lang="zh-CN"><head>${this.render_Head(this.config.title)}<style>
       :root{
         --bg-card:rgba(15,23,42,0.70);
         --bg-card-soft:rgba(15,23,42,0.58);
@@ -1772,59 +1780,58 @@ class NooMiNav {
       }
       .promo-preview-desc a{ color:#93c5fd; }
 
-      /* ✅ 新版：账号广告预览（支持 HTML / Markdown） */
-.account-preview-box{
-  padding:14px;
-  border-radius:18px;
-  background:linear-gradient(135deg, rgba(16,185,129,.10), rgba(59,130,246,.08));
-  border:1px solid var(--bd);
-}
-.account-preview-rich h1,
-.account-preview-rich h2,
-.account-preview-rich h3{ margin:0 0 10px; line-height:1.35; }
-.account-preview-rich h1{ font-size:1.15rem; }
-.account-preview-rich h2{ font-size:1.08rem; }
-.account-preview-rich h3{ font-size:1rem; }
-.account-preview-rich p{
-  margin:0 0 10px;
-  color:var(--txt-soft);
-  line-height:1.75;
-  font-size:.92rem;
-}
-.account-preview-rich ul{ margin:0 0 12px 18px; padding:0; }
-.account-preview-rich li{ margin:6px 0; color:var(--txt-soft); }
-.account-preview-rich code{
-  padding:2px 6px;
-  border-radius:8px;
-  background:rgba(255,255,255,.06);
-  border:1px solid var(--bd);
-}
-.account-preview-rich a{ color:#93c5fd; word-break:break-all; }
-.account-preview-rich .ad-badge{
-  display:inline-flex;
-  align-items:center;
-  padding:4px 10px;
-  margin-bottom:10px;
-  font-size:.72rem;
-  font-weight:800;
-  border-radius:999px;
-  background:rgba(16,185,129,.18);
-  border:1px solid rgba(16,185,129,.35);
-  color:#d1fae5;
-}
-.account-preview-rich .ad-btn{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  margin-top:10px;
-  padding:10px 14px;
-  border-radius:12px;
-  text-decoration:none;
-  color:#fff;
-  font-weight:800;
-  background:linear-gradient(135deg,#3b82f6,#8b5cf6);
-  border:1px solid rgba(255,255,255,.12);
-}
+      .account-preview-box{
+        padding:14px;
+        border-radius:18px;
+        background:linear-gradient(135deg, rgba(16,185,129,.10), rgba(59,130,246,.08));
+        border:1px solid var(--bd);
+      }
+      .account-preview-rich h1,
+      .account-preview-rich h2,
+      .account-preview-rich h3{ margin:0 0 10px; line-height:1.35; }
+      .account-preview-rich h1{ font-size:1.15rem; }
+      .account-preview-rich h2{ font-size:1.08rem; }
+      .account-preview-rich h3{ font-size:1rem; }
+      .account-preview-rich p{
+        margin:0 0 10px;
+        color:var(--txt-soft);
+        line-height:1.75;
+        font-size:.92rem;
+      }
+      .account-preview-rich ul{ margin:0 0 12px 18px; padding:0; }
+      .account-preview-rich li{ margin:6px 0; color:var(--txt-soft); }
+      .account-preview-rich code{
+        padding:2px 6px;
+        border-radius:8px;
+        background:rgba(255,255,255,.06);
+        border:1px solid var(--bd);
+      }
+      .account-preview-rich a{ color:#93c5fd; word-break:break-all; }
+      .account-preview-rich .ad-badge{
+        display:inline-flex;
+        align-items:center;
+        padding:4px 10px;
+        margin-bottom:10px;
+        font-size:.72rem;
+        font-weight:800;
+        border-radius:999px;
+        background:rgba(16,185,129,.18);
+        border:1px solid rgba(16,185,129,.35);
+        color:#d1fae5;
+      }
+      .account-preview-rich .ad-btn{
+        display:inline-flex;
+        align-items:center;
+        justify-content:center;
+        margin-top:10px;
+        padding:10px 14px;
+        border-radius:12px;
+        text-decoration:none;
+        color:#fff;
+        font-weight:800;
+        background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+        border:1px solid rgba(255,255,255,.12);
+      }
 
       .mask{
         position:fixed;
@@ -2097,7 +2104,6 @@ class NooMiNav {
         .promo-preview-box{ flex-direction:column; }
         .promo-preview-badge{ min-width:auto; width:fit-content; }
         .account-preview-box{ flex-direction:column; }
-        .account-preview-badge{ min-width:auto; width:fit-content; }
       }
       </style></head>
       <body>
@@ -2129,12 +2135,12 @@ class NooMiNav {
                 </div>
                 <div class="quick-card">
                   <div class="quick-label">活跃项目</div>
-                  <div class="quick-value">${Array.from(statsMap.values()).filter(c=>c.total_clicks>0).length}</div>
+                  <div class="quick-value">${Array.from(statsMap.values()).filter(c => c.total_clicks > 0).length}</div>
                 </div>
               </div>
               <div class="action-row">
                 <a href="/" class="action-btn action-soft">🏠 返回主页</a>
-                <button class="action-btn action-primary" onclick="openSettings()">⚙️ 系统设置</button>
+                <button type="button" class="action-btn action-primary" onclick="openSettings()">⚙️ 系统设置</button>
                 <a href="${this.ADMIN_PATH}/logout" class="action-btn action-danger">登出</a>
               </div>
             </div>
@@ -2190,7 +2196,7 @@ class NooMiNav {
         <aside class="drawer" id="dr">
           <div class="drawer-head">
             <h3 class="drawer-title" id="dt">点击记录</h3>
-            <button class="icon-btn" onclick="cls()">×</button>
+            <button type="button" class="icon-btn" onclick="cls()">×</button>
           </div>
           <ul class="log-list" id="dl"></ul>
         </aside>
@@ -2203,8 +2209,8 @@ class NooMiNav {
                 <div class="settings-sub">支持 JSON 自动格式化、示例模板填充、推广卡 HTML / Markdown 内容配置、右侧账号广告配置。</div>
               </div>
               <div class="settings-actions">
-                <button class="action-btn action-soft" onclick="cls()">取消 (Esc)</button>
-                <button class="action-btn action-primary" onclick="saveSettings(this)">💾 保存并生效</button>
+                <button type="button" class="action-btn action-soft" onclick="cls()">取消 (Esc)</button>
+                <button type="button" class="action-btn action-primary" onclick="saveSettings(this)">💾 保存并生效</button>
               </div>
             </div>
 
@@ -2288,52 +2294,52 @@ class NooMiNav {
                   </div>
                 </div>
 
-                <!-- ✅ 新版：账号广告配置 -->
-<div class="field full">
-  <label>右侧账号广告开关 / 配置</label>
-  <div class="switch-row" style="margin-bottom:12px;">
-    <label class="switch">
-      <input type="checkbox" id="s_account_enable">
-      <span class="slider"></span>
-    </label>
-    <span style="color:var(--txt-sub);font-weight:700;">启用首页右侧账号广告位</span>
-  </div>
+                <div class="field full">
+                  <label>右侧账号广告开关 / 配置</label>
+                  <div class="switch-row" style="margin-bottom:12px;">
+                    <label class="switch">
+                      <input type="checkbox" id="s_account_enable">
+                      <span class="slider"></span>
+                    </label>
+                    <span style="color:var(--txt-sub);font-weight:700;">启用首页右侧账号广告位</span>
+                  </div>
 
-  <div class="settings-grid">
-    <div class="field">
-      <label>内容格式</label>
-      <select id="s_account_format">
-        <option value="markdown">Markdown</option>
-        <option value="html">HTML</option>
-      </select>
-    </div>
+                  <div class="settings-grid">
+                    <div class="field">
+                      <label>内容格式</label>
+                      <select id="s_account_format">
+                        <option value="markdown">Markdown</option>
+                        <option value="html">HTML</option>
+                      </select>
+                    </div>
 
-    <div class="field">
-      <label>快捷填充</label>
-      <div class="field-tools" style="margin-bottom:0;">
-        <button class="mini-btn" type="button" onclick="fillAccountMarkdownExample()">填入 Markdown 示例</button>
-        <button class="mini-btn" type="button" onclick="fillAccountHtmlExample()">填入 HTML 示例</button>
-      </div>
-      <small>推荐优先使用 Markdown。想做按钮、徽标、自定义结构时用 HTML。</small>
-    </div>
-  </div>
+                    <div class="field">
+                      <label>快捷填充</label>
+                      <div class="field-tools" style="margin-bottom:0;">
+                        <button type="button" class="mini-btn" onclick="fillAccountMarkdownExample()">填入 Markdown 示例</button>
+                        <button type="button" class="mini-btn" onclick="fillAccountHtmlExample()">填入 HTML 示例</button>
+                      </div>
+                      <small>推荐优先使用 Markdown。想做按钮、徽标、自定义结构时用 HTML。</small>
+                    </div>
+                  </div>
 
-  <div style="margin-top:16px;">
-    <label style="display:block;margin-bottom:10px;font-size:.88rem;color:var(--txt-sub);font-weight:800;">广告内容</label>
-    <textarea id="s_account_content" class="code" style="min-height:220px" placeholder="可直接粘贴 Markdown 或 HTML 片段"></textarea>
-    <small>内容会直接渲染到首页右侧广告位。HTML 模式下请只粘贴你自己信任的代码，不要放 script。</small>
-  </div>
-</div>
-<div class="field full">
-  <label>自定义卡片跳转域名</label>
-  <input type="text" id="s_host" placeholder="如果不填，默认自动使用当前访问域名">
-</div>
+                  <div style="margin-top:16px;">
+                    <label style="display:block;margin-bottom:10px;font-size:.88rem;color:var(--txt-sub);font-weight:800;">广告内容</label>
+                    <textarea id="s_account_content" class="code" style="min-height:220px" placeholder="可直接粘贴 Markdown 或 HTML 片段"></textarea>
+                    <small>内容会直接渲染到首页右侧广告位。HTML 模式下请只粘贴你自己信任的代码，不要放 script。</small>
+                  </div>
+                </div>
+
+                <div class="field full">
+                  <label>自定义卡片跳转域名</label>
+                  <input type="text" id="s_host" placeholder="如果不填，默认自动使用当前访问域名">
+                </div>
 
                 <div class="field full">
                   <label>💎 精选资源 LINKS（JSON 格式）</label>
                   <div class="field-tools">
-                    <button class="mini-btn" type="button" onclick="formatJsonField('s_links')">自动格式化</button>
-                    <button class="mini-btn" type="button" onclick="fillLinksExample()">填入示例模板</button>
+                    <button type="button" class="mini-btn" onclick="formatJsonField('s_links')">自动格式化</button>
+                    <button type="button" class="mini-btn" onclick="fillLinksExample()">填入示例模板</button>
                   </div>
                   <textarea id="s_links" class="code"></textarea>
                 </div>
@@ -2341,8 +2347,8 @@ class NooMiNav {
                 <div class="field full">
                   <label>🔗 合作伙伴 FRIENDS（JSON 格式）</label>
                   <div class="field-tools">
-                    <button class="mini-btn" type="button" onclick="formatJsonField('s_friends')">自动格式化</button>
-                    <button class="mini-btn" type="button" onclick="fillFriendsExample()">填入示例模板</button>
+                    <button type="button" class="mini-btn" onclick="formatJsonField('s_friends')">自动格式化</button>
+                    <button type="button" class="mini-btn" onclick="fillFriendsExample()">填入示例模板</button>
                   </div>
                   <textarea id="s_friends" class="code"></textarea>
                 </div>
@@ -2354,291 +2360,268 @@ class NooMiNav {
         ${this.render_BgRuntimeScript()}
 
         <script>
-  console.log('admin script loaded');
-  const ADMIN_PATH = '${this.ADMIN_PATH}';
-  const SYS_SET = ${this.safeScriptJson(sysSettings)};
+          console.log('admin script loaded');
+          const ADMIN_PATH = '${this.ADMIN_PATH}';
+          const SYS_SET = ${this.safeScriptJson(sysSettings)};
 
-  const LINKS_EXAMPLE = [
-    {
-      id: "google",
-      name: "Google 搜索",
-      url: "https://www.google.com",
-      backup_url: "https://www.google.com.hk",
-      emoji: "🔎",
-      note: "全球常用搜索引擎",
-      tag: "推荐"
-    },
-    {
-      id: "github",
-      name: "GitHub",
-      url: "https://github.com",
-      emoji: "💻",
-      note: "代码托管与开源社区"
-    }
-  ];
+          const LINKS_EXAMPLE = [
+            {
+              id: "google",
+              name: "Google 搜索",
+              url: "https://www.google.com",
+              backup_url: "https://www.google.com.hk",
+              emoji: "🔎",
+              note: "全球常用搜索引擎",
+              tag: "推荐"
+            },
+            {
+              id: "github",
+              name: "GitHub",
+              url: "https://github.com",
+              emoji: "💻",
+              note: "代码托管与开源社区"
+            }
+          ];
 
-  const FRIENDS_EXAMPLE = [
-    {
-      id: "friend_1",
-      name: "示例友链站点",
-      url: "https://example.com"
-    },
-    {
-      id: "friend_2",
-      name: "另一个合作伙伴",
-      url: "https://example.org"
-    }
-  ];
+          const FRIENDS_EXAMPLE = [
+            {
+              id: "friend_1",
+              name: "示例友链站点",
+              url: "https://example.com"
+            },
+            {
+              id: "friend_2",
+              name: "另一个合作伙伴",
+              url: "https://example.org"
+            }
+          ];
 
-  const ACCOUNT_MD_EXAMPLE = '### 🔐 账号购买\n\n'
-    + 'Google 账号 / Apple 外区 ID / Telegram / Instagram / X\n\n'
-    + '- 多种类型可选\n'
-    + '- 快速处理\n'
-    + '- 自动发货\n'
-    + '- 下单前请先查看商品说明\n\n'
-    + '[👉 立即进入购买通道](https://tgsss.com/9EB6941B)';
+          const ACCOUNT_MD_EXAMPLE =
+            '### 🔐 账号购买\\n\\n' +
+            'Google 账号 / Apple 外区 ID / Telegram / Instagram / X\\n\\n' +
+            '- 多种类型可选\\n' +
+            '- 快速处理\\n' +
+            '- 自动发货\\n' +
+            '- 下单前请先查看商品说明\\n\\n' +
+            '[👉 立即进入购买通道](https://tgsss.com/9EB6941B)';
 
-  const ACCOUNT_HTML_EXAMPLE = '<div class="ad-badge">账号购买</div>\n'
-    + '<h3>Google / Apple 外区 ID / Telegram / Instagram / X</h3>\n'
-    + '<p>多种账号可选，快速处理，支持自动发货。</p>\n'
-    + '<ul>\n'
-    + '  <li>Google 账号</li>\n'
-    + '  <li>Apple 外区 ID</li>\n'
-    + '  <li>Telegram / Instagram / X</li>\n'
-    + '</ul>\n'
-    + '<a class="ad-btn" href="https://tgsss.com/9EB6941B" target="_blank" rel="noopener noreferrer">👉 立即进入购买通道</a>\n'
-    + '<p style="margin-top:8px;opacity:.78;font-size:12px;">下单前建议先查看商品说明，按需求选择版本。</p>';
+          const ACCOUNT_HTML_EXAMPLE =
+            '<div class="ad-badge">账号购买</div>\\n' +
+            '<h3>Google / Apple 外区 ID / Telegram / Instagram / X</h3>\\n' +
+            '<p>多种账号可选，快速处理，支持自动发货。</p>\\n' +
+            '<ul>\\n' +
+            '  <li>Google 账号</li>\\n' +
+            '  <li>Apple 外区 ID</li>\\n' +
+            '  <li>Telegram / Instagram / X</li>\\n' +
+            '</ul>\\n' +
+            '<a class="ad-btn" href="https://tgsss.com/9EB6941B" target="_blank" rel="noopener noreferrer">👉 立即进入购买通道</a>\\n' +
+            '<p style="margin-top:8px;opacity:.78;font-size:12px;">下单前建议先查看商品说明，按需求选择版本。</p>';
 
-  function initAdminTheme() {
-    const btn = document.querySelector('.theme-toggle');
-    if (!btn) return;
+          function initAdminTheme() {
+            const btn = document.querySelector('.theme-toggle');
+            if (!btn) return;
 
-    if (localStorage.getItem('admin_theme') === 'light') {
-      document.body.classList.add('light-theme');
-      btn.textContent = '🌙';
-    } else {
-      btn.textContent = '☀️';
-    }
-  }
-  initAdminTheme();
+            if (localStorage.getItem('admin_theme') === 'light') {
+              document.body.classList.add('light-theme');
+              btn.textContent = '🌙';
+            } else {
+              btn.textContent = '☀️';
+            }
+          }
+          initAdminTheme();
 
-  function toggleAdminTheme() {
-    const btn = document.querySelector('.theme-toggle');
-    document.body.classList.toggle('light-theme');
-    const isLight = document.body.classList.contains('light-theme');
-    localStorage.setItem('admin_theme', isLight ? 'light' : 'dark');
-    if (btn) btn.textContent = isLight ? '🌙' : '☀️';
-  }
+          function toggleAdminTheme() {
+            const btn = document.querySelector('.theme-toggle');
+            document.body.classList.toggle('light-theme');
+            const isLight = document.body.classList.contains('light-theme');
+            localStorage.setItem('admin_theme', isLight ? 'light' : 'dark');
+            if (btn) btn.textContent = isLight ? '🌙' : '☀️';
+          }
 
-  async function openLog(id, m, n) {
-    const dr = document.getElementById('dr');
-    const mask = document.getElementById('mask');
-    const l = document.getElementById('dl');
+          async function openLog(id, m, n) {
+            const dr = document.getElementById('dr');
+            const mask = document.getElementById('mask');
+            const l = document.getElementById('dl');
 
-    dr.classList.add('open');
-    mask.classList.add('show');
+            dr.classList.add('open');
+            mask.classList.add('show');
 
-    const safeName = decodeURIComponent(n || '');
-    document.getElementById('dt').innerText = safeName + ' · 点击记录';
+            const safeName = decodeURIComponent(n || '');
+            document.getElementById('dt').innerText = safeName + ' · 点击记录';
 
-    l.innerHTML = '<li style="padding:20px;text-align:center;color:var(--txt-sub)">加载中...</li>';
+            l.innerHTML = '<li style="padding:20px;text-align:center;color:var(--txt-sub)">加载中...</li>';
 
-    try {
-      const r = await fetch(
-        ADMIN_PATH + '/api/logs?id=' + encodeURIComponent(id) + '&m=' + encodeURIComponent(m)
-      );
-      const data = await r.json();
+            try {
+              const r = await fetch(
+                ADMIN_PATH + '/api/logs?id=' + encodeURIComponent(id) + '&m=' + encodeURIComponent(m)
+              );
+              const data = await r.json();
 
-      if (!data.length) {
-        l.innerHTML = '<li style="padding:20px;text-align:center;opacity:.6;color:var(--txt-sub)">该时段无记录</li>';
-        return;
-      }
+              if (!data.length) {
+                l.innerHTML = '<li style="padding:20px;text-align:center;opacity:.6;color:var(--txt-sub)">该时段无记录</li>';
+                return;
+              }
 
-      let html = '';
-      for (let i = 0; i < data.length; i++) {
-        const x = data[i];
-        html += '<li class="log-item">'
-          + '<div class="log-row">'
-          + '<span class="log-index">#' + (i + 1) + '</span>'
-          + '<span class="log-time">' + (x.click_time || '') + '</span>'
-          + '</div>'
-          + '<div class="log-meta">'
-          + '<span>' + (x.ip_address || 'unknown') + '</span>'
-          + '<span>' + ((((x.user_agent || '').slice(0, 46)) || 'unknown')) + '</span>'
-          + '</div>'
-          + '</li>';
-      }
-      l.innerHTML = html;
-    } catch (e) {
-      l.innerHTML = '<li style="padding:20px;text-align:center;color:#f87171">加载失败</li>';
-      console.error(e);
-    }
-  }
+              let html = '';
+              for (let i = 0; i < data.length; i++) {
+                const x = data[i];
+                html += '<li class="log-item">'
+                  + '<div class="log-row">'
+                  + '<span class="log-index">#' + (i + 1) + '</span>'
+                  + '<span class="log-time">' + (x.click_time || '') + '</span>'
+                  + '</div>'
+                  + '<div class="log-meta">'
+                  + '<span>' + (x.ip_address || 'unknown') + '</span>'
+                  + '<span>' + (((x.user_agent || '').slice(0, 46)) || 'unknown') + '</span>'
+                  + '</div>'
+                  + '</li>';
+              }
+              l.innerHTML = html;
+            } catch (e) {
+              l.innerHTML = '<li style="padding:20px;text-align:center;color:#f87171">加载失败</li>';
+              console.error(e);
+            }
+          }
 
-  function openSettings() {
-  try {
-    const $ = function(id) {
-      return document.getElementById(id);
-    };
+          function openSettings() {
+            document.getElementById('s_pass').value = SYS_SET.admin_pass || '';
+            document.getElementById('s_title').value = SYS_SET.title || '';
+            document.getElementById('s_sub').value = SYS_SET.subtitle || '';
+            document.getElementById('s_img').value = SYS_SET.img || '';
+            document.getElementById('s_tg').value = SYS_SET.contact_url || '';
+            document.getElementById('s_mail').value = SYS_SET.mail || '';
+            document.getElementById('s_push').value = SYS_SET.push || '';
+            document.getElementById('s_host').value = SYS_SET.host || '';
+            document.getElementById('s_notice').value = SYS_SET.notice || '';
 
-    if ($('s_pass')) $('s_pass').value = SYS_SET.admin_pass || '';
-    if ($('s_title')) $('s_title').value = SYS_SET.title || '';
-    if ($('s_sub')) $('s_sub').value = SYS_SET.subtitle || '';
-    if ($('s_img')) $('s_img').value = SYS_SET.img || '';
-    if ($('s_tg')) $('s_tg').value = SYS_SET.contact_url || '';
-    if ($('s_mail')) $('s_mail').value = SYS_SET.mail || '';
-    if ($('s_push')) $('s_push').value = SYS_SET.push || '';
-    if ($('s_host')) $('s_host').value = SYS_SET.host || '';
-    if ($('s_notice')) $('s_notice').value = SYS_SET.notice || '';
+            document.getElementById('s_promo_enable').checked = String(SYS_SET.promo_enable || '0') === '1';
+            document.getElementById('s_promo_badge').value = SYS_SET.promo_badge || '';
+            document.getElementById('s_promo_title').value = SYS_SET.promo_title || '';
+            document.getElementById('s_promo_desc').value = SYS_SET.promo_desc || '';
+            document.getElementById('s_promo_url').value = SYS_SET.promo_url || '';
+            document.getElementById('s_promo_format').value = SYS_SET.promo_format || 'markdown';
 
-    if ($('s_promo_enable')) $('s_promo_enable').checked = String(SYS_SET.promo_enable || '0') === '1';
-    if ($('s_promo_badge')) $('s_promo_badge').value = SYS_SET.promo_badge || '';
-    if ($('s_promo_title')) $('s_promo_title').value = SYS_SET.promo_title || '';
-    if ($('s_promo_desc')) $('s_promo_desc').value = SYS_SET.promo_desc || '';
-    if ($('s_promo_url')) $('s_promo_url').value = SYS_SET.promo_url || '';
-    if ($('s_promo_format')) $('s_promo_format').value = SYS_SET.promo_format || 'markdown';
+            document.getElementById('s_account_enable').checked = String(SYS_SET.account_enable || '0') === '1';
+            document.getElementById('s_account_format').value = SYS_SET.account_format || 'markdown';
+            document.getElementById('s_account_content').value = SYS_SET.account_content || '';
 
-    if ($('s_account_enable')) $('s_account_enable').checked = String(SYS_SET.account_enable || '0') === '1';
-    if ($('s_account_format')) $('s_account_format').value = SYS_SET.account_format || 'markdown';
-    if ($('s_account_content')) $('s_account_content').value = SYS_SET.account_content || '';
+            document.getElementById('s_links').value = SYS_SET.links || '[]';
+            document.getElementById('s_friends').value = SYS_SET.friends || '[]';
 
-    if ($('s_links')) $('s_links').value = SYS_SET.links || '[]';
-    if ($('s_friends')) $('s_friends').value = SYS_SET.friends || '[]';
+            document.getElementById('set-fs').classList.add('open');
+            document.getElementById('mask').classList.add('show');
+            document.body.style.overflow = 'hidden';
+          }
 
-    if ($('set-fs')) $('set-fs').classList.add('open');
-    if ($('mask')) $('mask').classList.add('show');
+          function formatJsonField(id) {
+            const el = document.getElementById(id);
+            try {
+              const parsed = JSON.parse(el.value);
+              el.value = JSON.stringify(parsed, null, 2);
+              alert('✅ 已自动格式化');
+            } catch (e) {
+              alert('⚠️ JSON 格式有误，无法格式化');
+            }
+          }
 
-    document.body.style.overflow = 'hidden';
-  } catch (e) {
-    console.error('openSettings error:', e);
-    alert('系统设置打开失败，请按 F12 查看控制台报错');
-  }
-}
+          function fillLinksExample() {
+            const el = document.getElementById('s_links');
+            if (el.value.trim() && !confirm('当前 LINKS 内容不为空，确定要用示例模板覆盖吗？')) return;
+            el.value = JSON.stringify(LINKS_EXAMPLE, null, 2);
+          }
 
-  function formatJsonField(id) {
-    const el = document.getElementById(id);
-    try {
-      const parsed = JSON.parse(el.value);
-      el.value = JSON.stringify(parsed, null, 2);
-      alert('✅ 已自动格式化');
-    } catch (e) {
-      alert('⚠️ JSON 格式有误，无法格式化');
-    }
-  }
+          function fillFriendsExample() {
+            const el = document.getElementById('s_friends');
+            if (el.value.trim() && !confirm('当前 FRIENDS 内容不为空，确定要用示例模板覆盖吗？')) return;
+            el.value = JSON.stringify(FRIENDS_EXAMPLE, null, 2);
+          }
 
-  function fillLinksExample() {
-    const el = document.getElementById('s_links');
-    if (el.value.trim() && !confirm('当前 LINKS 内容不为空，确定要用示例模板覆盖吗？')) return;
-    el.value = JSON.stringify(LINKS_EXAMPLE, null, 2);
-  }
+          function fillAccountMarkdownExample() {
+            const el = document.getElementById('s_account_content');
+            if (el.value.trim() && !confirm('当前账号广告内容不为空，确定要用 Markdown 示例覆盖吗？')) return;
+            document.getElementById('s_account_format').value = 'markdown';
+            el.value = ACCOUNT_MD_EXAMPLE;
+          }
 
-  function fillFriendsExample() {
-    const el = document.getElementById('s_friends');
-    if (el.value.trim() && !confirm('当前 FRIENDS 内容不为空，确定要用示例模板覆盖吗？')) return;
-    el.value = JSON.stringify(FRIENDS_EXAMPLE, null, 2);
-  }
+          function fillAccountHtmlExample() {
+            const el = document.getElementById('s_account_content');
+            if (el.value.trim() && !confirm('当前账号广告内容不为空，确定要用 HTML 示例覆盖吗？')) return;
+            document.getElementById('s_account_format').value = 'html';
+            el.value = ACCOUNT_HTML_EXAMPLE;
+          }
 
-  function fillAccountMarkdownExample() {
-    const el = document.getElementById('s_account_content');
-    if (el.value.trim() && !confirm('当前账号广告内容不为空，确定要用 Markdown 示例覆盖吗？')) return;
-    document.getElementById('s_account_format').value = 'markdown';
-    el.value = ACCOUNT_MD_EXAMPLE;
-  }
+          async function saveSettings(btn) {
+            try {
+              JSON.parse(document.getElementById('s_links').value);
+              JSON.parse(document.getElementById('s_friends').value);
+            } catch (e) {
+              alert('⚠️ JSON 格式解析错误！请检查是否有遗漏的逗号、引号或括号。');
+              return;
+            }
 
-  function fillAccountHtmlExample() {
-    const el = document.getElementById('s_account_content');
-    if (el.value.trim() && !confirm('当前账号广告内容不为空，确定要用 HTML 示例覆盖吗？')) return;
-    document.getElementById('s_account_format').value = 'html';
-    el.value = ACCOUNT_HTML_EXAMPLE;
-  }
+            const data = {
+              admin_pass: document.getElementById('s_pass').value,
+              title: document.getElementById('s_title').value,
+              subtitle: document.getElementById('s_sub').value,
+              img: document.getElementById('s_img').value,
+              contact_url: document.getElementById('s_tg').value,
+              mail: document.getElementById('s_mail').value,
+              push: document.getElementById('s_push').value,
+              host: document.getElementById('s_host').value,
+              notice: document.getElementById('s_notice').value,
 
-  async function saveSettings(btn) {
-    try {
-      JSON.parse(document.getElementById('s_links').value);
-      JSON.parse(document.getElementById('s_friends').value);
-    } catch (e) {
-      alert('⚠️ JSON 格式解析错误！请检查是否有遗漏的逗号、引号或括号。');
-      return;
-    }
+              promo_enable: document.getElementById('s_promo_enable').checked ? '1' : '0',
+              promo_badge: document.getElementById('s_promo_badge').value,
+              promo_title: document.getElementById('s_promo_title').value,
+              promo_desc: document.getElementById('s_promo_desc').value,
+              promo_url: document.getElementById('s_promo_url').value,
+              promo_format: document.getElementById('s_promo_format').value,
 
-    const data = {
-      admin_pass: document.getElementById('s_pass').value,
-      title: document.getElementById('s_title').value,
-      subtitle: document.getElementById('s_sub').value,
-      img: document.getElementById('s_img').value,
-      contact_url: document.getElementById('s_tg').value,
-      mail: document.getElementById('s_mail').value,
-      push: document.getElementById('s_push').value,
-      host: document.getElementById('s_host').value,
-      notice: document.getElementById('s_notice').value,
+              account_enable: document.getElementById('s_account_enable').checked ? '1' : '0',
+              account_format: document.getElementById('s_account_format').value,
+              account_content: document.getElementById('s_account_content').value,
 
-      promo_enable: document.getElementById('s_promo_enable').checked ? '1' : '0',
-      promo_badge: document.getElementById('s_promo_badge').value,
-      promo_title: document.getElementById('s_promo_title').value,
-      promo_desc: document.getElementById('s_promo_desc').value,
-      promo_url: document.getElementById('s_promo_url').value,
-      promo_format: document.getElementById('s_promo_format').value,
+              links: document.getElementById('s_links').value,
+              friends: document.getElementById('s_friends').value
+            };
 
-      account_enable: document.getElementById('s_account_enable').checked ? '1' : '0',
-      account_format: document.getElementById('s_account_format').value,
-      account_content: document.getElementById('s_account_content').value,
+            const originalText = btn.innerText;
+            btn.innerText = '保存中...';
+            btn.disabled = true;
 
-      links: document.getElementById('s_links').value,
-      friends: document.getElementById('s_friends').value
-    };
+            try {
+              const res = await fetch(ADMIN_PATH + '/api/settings', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+              });
 
-    const originalText = btn.innerText;
-    btn.innerText = '保存中...';
-    btn.disabled = true;
+              if (res.ok) {
+                alert('✅ 配置已保存并生效！');
+                location.reload();
+              } else {
+                const text = await res.text();
+                alert('❌ 保存失败：' + text);
+              }
+            } catch (e) {
+              alert('❌ 网络错误');
+            }
 
-    try {
-      const res = await fetch(ADMIN_PATH + '/api/settings', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
-      });
+            btn.innerText = originalText;
+            btn.disabled = false;
+          }
 
-      if (res.ok) {
-        alert('✅ 配置已保存并生效！');
-        location.reload();
-      } else {
-        const text = await res.text();
-        alert('❌ 保存失败：' + text);
-      }
-    } catch (e) {
-      alert('❌ 网络错误');
-    }
+          function cls() {
+            document.getElementById('dr').classList.remove('open');
+            document.getElementById('set-fs').classList.remove('open');
+            document.getElementById('mask').classList.remove('show');
+            document.body.style.overflow = '';
+          }
 
-    btn.innerText = originalText;
-    btn.disabled = false;
-  }
-
-  function cls() {
-    document.getElementById('dr').classList.remove('open');
-    document.getElementById('set-fs').classList.remove('open');
-    document.getElementById('mask').classList.remove('show');
-    document.body.style.overflow = '';
-  }
-
-  document.addEventListener('keydown', function(e) {
-  if (e.key === 'Escape') cls();
-});
-
-window.toggleAdminTheme = toggleAdminTheme;
-window.openLog = openLog;
-window.openSettings = openSettings;
-window.formatJsonField = formatJsonField;
-window.fillLinksExample = fillLinksExample;
-window.fillFriendsExample = fillFriendsExample;
-window.fillAccountMarkdownExample = fillAccountMarkdownExample;
-window.fillAccountHtmlExample = fillAccountHtmlExample;
-window.saveSettings = saveSettings;
-window.cls = cls;
-  
-    if (e.key === 'Escape') cls();
-  });
-  
-</script>
+          document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') cls();
+          });
+        </script>
       </body></html>`;
-}
+  }
 }
