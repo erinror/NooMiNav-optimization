@@ -935,8 +935,8 @@ class NooMiNav {
 
     .buy-side-ad{
   position:fixed; right:18px; top:50%; transform:translateY(-50%);
-  width:120px;              /* 原来 220，改大就是“更长” */
-  min-height:300px;         /* 想更高可以加这个 */
+  width:220px;              /* 原来 220，改大就是“更长” */
+  min-height:180px;         /* 想更高可以加这个 */
   z-index:180;
   background:rgba(15,23,42,.82);
   border:1px solid rgba(255,255,255,.16);
