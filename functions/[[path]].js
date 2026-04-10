@@ -1,352 +1,446 @@
 // ============================================================================
-// NooMiNav V13.2 UI Refresh Pro - Fixed
+// NooMiNav V13.2 UI Refresh Pro - Patched Full
 // 双擎驱动适配器：支持 Cloudflare Workers 和 Pages
 // ============================================================================
-export default { async fetch(request, env, ctx) { const app = new NooMiNav(request, env, ctx); return app.handle(); } };
-export async function onRequest(context) { const app = new NooMiNav(context.request, context.env, context); return app.handle(); }
+
+export default {
+  async fetch(request, env, ctx) {
+    const app = new NooMiNav(request, env, ctx);
+    return app.handle();
+  }
+};
+
+export async function onRequest(context) {
+  const app = new NooMiNav(context.request, context.env, context);
+  return app.handle();
+}
 
 // ============================================================================
 // 核心应用类
 // ============================================================================
 class NooMiNav {
-    constructor(request, env, ctx) {
-        this.request = request;
-        this.env = env;
-        this.ctx = ctx;
-        this.url = new URL(request.url);
+  constructor(request, env, ctx) {
+    this.request = request;
+    this.env = env;
+    this.ctx = ctx;
+    this.url = new URL(request.url);
 
-        this.COOKIE_NAME = "nav_session_v13_pro";
-        this.DEFAULT_IMG = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073";
-        this.FONT_STACK = `'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
+    this.COOKIE_NAME = "nav_session_v13_pro";
+    this.DEFAULT_IMG = "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?q=80&w=2073";
+    this.FONT_STACK = `'SF Pro Display', 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif`;
 
-        const now = new Date(new Date().getTime() + 8 * 3600000);
-        this.time = {
-            now: now,
-            year: now.getFullYear().toString(),
-            month: (now.getMonth() + 1).toString().padStart(2, '0'),
-            todayStr: now.toISOString().split('T')[0],
-            fullStr: now.toISOString().replace('T', ' ').substring(0, 19),
-            dateKey: `${now.getFullYear()}_${(now.getMonth() + 1).toString().padStart(2, '0')}`
-        };
+    // ✅ 修复：明确上海时区，避免硬 +8 导致跨天异常
+    const now = new Date(new Date().toLocaleString('en-US', { timeZone: 'Asia/Shanghai' }));
+    const y = now.getFullYear().toString();
+    const mo = (now.getMonth() + 1).toString().padStart(2, '0');
+    const d = now.getDate().toString().padStart(2, '0');
+    const hh = now.getHours().toString().padStart(2, '0');
+    const mm = now.getMinutes().toString().padStart(2, '0');
+    const ss = now.getSeconds().toString().padStart(2, '0');
+
+    this.time = {
+      now: now,
+      year: y,
+      month: mo,
+      todayStr: `${y}-${mo}-${d}`,
+      fullStr: `${y}-${mo}-${d} ${hh}:${mm}:${ss}`,
+      dateKey: `${y}_${mo}`
+    };
+  }
+
+  // ------------------------------------------------------------------------
+  // [模块 1] 初始化配置加载
+  // ------------------------------------------------------------------------
+  async initConfig() {
+    this.dbSettings = {};
+    if (this.env.db) {
+      try {
+        // ✅ 修复：统一初始化表，避免 no such table
+        await this.env.db.prepare("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)").run();
+        await this.env.db.prepare(`
+          CREATE TABLE IF NOT EXISTS logs (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            link_id TEXT,
+            click_time TEXT,
+            month_key TEXT,
+            ip_address TEXT,
+            user_agent TEXT
+          )
+        `).run();
+        await this.env.db.prepare(`
+          CREATE TABLE IF NOT EXISTS stats (
+            id TEXT PRIMARY KEY,
+            name TEXT,
+            type TEXT,
+            total_clicks INTEGER DEFAULT 0,
+            year_clicks INTEGER DEFAULT 0,
+            month_clicks INTEGER DEFAULT 0,
+            day_clicks INTEGER DEFAULT 0,
+            last_year TEXT,
+            last_month TEXT,
+            last_day TEXT,
+            last_time TEXT
+          )
+        `).run();
+
+        const res = await this.env.db.prepare("SELECT * FROM settings").all();
+        (res.results || []).forEach(r => this.dbSettings[r.key] = r.value);
+      } catch (e) {
+        console.error("initConfig DB error:", e);
+      }
     }
 
-    // ------------------------------------------------------------------------
-    // [模块 1] 初始化配置加载
-    // ------------------------------------------------------------------------
-    async initConfig() {
-        this.dbSettings = {};
-        if (this.env.db) {
-            try {
-                const res = await this.env.db.prepare("SELECT * FROM settings").all();
-                res.results.forEach(r => this.dbSettings[r.key] = r.value);
-            } catch (e) {
-                if (e.message.includes("no such table")) {
-                    try { await this.env.db.prepare("CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT)").run(); } catch (err) {}
-                }
-            }
-        }
+    this.ADMIN_PATH = '/' + (this.env.admin || 'admin').replace(/^\//, '');
 
-        this.ADMIN_PATH = '/' + (this.env.admin || 'admin').replace(/^\//, '');
+    this.config = {
+      admin_pass: this.dbSettings.admin_pass || "123456",
+      title: this.dbSettings.title || this.env.TITLE || "云端加速 · 精选导航",
+      subtitle: this.dbSettings.subtitle || this.env.SUBTITLE || "优质资源推荐 · 随时畅联",
+      contact_url: this.dbSettings.contact_url || this.env.CONTACT_URL || "",
+      mail: this.dbSettings.mail !== undefined ? this.dbSettings.mail : (this.env.mail || ""),
+      push: this.dbSettings.push !== undefined ? this.dbSettings.push : (this.env.push || ""),
+      host: (this.dbSettings.host || this.env.host || this.url.origin).replace(/\/$/, ''),
+      notice: this.dbSettings.notice !== undefined
+        ? this.dbSettings.notice
+        : (this.env.notice || "<div style=\"margin-bottom:8px\">🎉 欢迎使用 FlarePortal 极简导航！</div><div class=\"notice-sub\">您可以在后台「系统设置」中修改此处的公告内容，支持 HTML 标签。如果清空内容，公告板将自动隐藏。</div>"),
 
-        this.config = {
-            admin_pass: this.dbSettings.admin_pass || "123456",
-            title: this.dbSettings.title || this.env.TITLE || "云端加速 · 精选导航",
-            subtitle: this.dbSettings.subtitle || this.env.SUBTITLE || "优质资源推荐 · 随时畅联",
-            contact_url: this.dbSettings.contact_url || this.env.CONTACT_URL || "",
-            mail: this.dbSettings.mail !== undefined ? this.dbSettings.mail : (this.env.mail || ""),
-            push: this.dbSettings.push !== undefined ? this.dbSettings.push : (this.env.push || ""),
-            host: (this.dbSettings.host || this.env.host || this.url.origin).replace(/\/$/, ''),
-            notice: this.dbSettings.notice !== undefined
-                ? this.dbSettings.notice
-                : (this.env.notice || "<div style=\"margin-bottom:8px\">🎉 欢迎使用 FlarePortal 极简导航！</div><div class=\"notice-sub\">您可以在后台「系统设置」中修改此处的公告内容，支持 HTML 标签。如果清空内容，公告板将自动隐藏。</div>"),
+      promo_enable: this.dbSettings.promo_enable !== undefined ? this.dbSettings.promo_enable : (this.env.promo_enable || "1"),
+      promo_badge: this.dbSettings.promo_badge !== undefined ? this.dbSettings.promo_badge : (this.env.promo_badge || "免费域名可托管 CF"),
+      promo_title: this.dbSettings.promo_title !== undefined ? this.dbSettings.promo_title : (this.env.promo_title || "本站域名服务由 DigitalPlat FreeDomain 提供支持"),
+      promo_desc: this.dbSettings.promo_desc !== undefined ? this.dbSettings.promo_desc : (this.env.promo_desc || "可免费申请域名，支持 Cloudflare 托管接入，适合导航站与个人项目使用。"),
+      promo_url: this.dbSettings.promo_url !== undefined ? this.dbSettings.promo_url : (this.env.promo_url || "https://dash.domain.digitalplat.org/signup?ref=s8ywnMQRkL"),
+      promo_format: this.dbSettings.promo_format !== undefined ? this.dbSettings.promo_format : (this.env.promo_format || "markdown")
+    };
 
-            promo_enable: this.dbSettings.promo_enable !== undefined ? this.dbSettings.promo_enable : (this.env.promo_enable || "1"),
-            promo_badge: this.dbSettings.promo_badge !== undefined ? this.dbSettings.promo_badge : (this.env.promo_badge || "免费域名可托管 CF"),
-            promo_title: this.dbSettings.promo_title !== undefined ? this.dbSettings.promo_title : (this.env.promo_title || "本站域名服务由 DigitalPlat FreeDomain 提供支持"),
-            promo_desc: this.dbSettings.promo_desc !== undefined ? this.dbSettings.promo_desc : (this.env.promo_desc || "可免费申请域名，支持 Cloudflare 托管接入，适合导航站与个人项目使用。"),
-            promo_url: this.dbSettings.promo_url !== undefined ? this.dbSettings.promo_url : (this.env.promo_url || "https://dash.domain.digitalplat.org/signup?ref=s8ywnMQRkL"),
-            promo_format: this.dbSettings.promo_format !== undefined ? this.dbSettings.promo_format : (this.env.promo_format || "markdown")
-        };
-
-        if (this.config.push && !this.config.push.endsWith('/contact')) {
-            this.config.push = this.config.push.replace(/\/$/, '') + '/contact';
-        }
-
-        this.config.img = this.DEFAULT_IMG;
-        const imgSource = this.dbSettings.img || this.env.img;
-        if (imgSource) {
-            const imgStr = imgSource.trim();
-            if (imgStr.startsWith('data:')) {
-                this.config.img = imgStr;
-            } else {
-                const list = imgStr.split(',').map(s => s.trim()).filter(s => s);
-                if (list.length > 0) {
-                    const dayIndex = Math.floor((this.time.now.getTime()) / 86400000);
-                    this.config.img = list[dayIndex % list.length];
-                }
-            }
-        }
+    if (this.config.push && !this.config.push.endsWith('/contact')) {
+      this.config.push = this.config.push.replace(/\/$/, '') + '/contact';
     }
 
-    loadJsonData() {
-        const getJsonEnv = (k) => { try { return this.env[k] ? JSON.parse(this.env[k]) : []; } catch (e) { return []; } };
-        this.LINKS_DATA = this.dbSettings.links ? JSON.parse(this.dbSettings.links) : getJsonEnv('LINKS');
-        this.FRIENDS_DATA = this.dbSettings.friends ? JSON.parse(this.dbSettings.friends) : getJsonEnv('FRIENDS');
+    this.config.img = this.DEFAULT_IMG;
+    const imgSource = this.dbSettings.img || this.env.img;
+    if (imgSource) {
+      const imgStr = imgSource.trim();
+      if (imgStr.startsWith('data:')) {
+        this.config.img = imgStr;
+      } else {
+        const list = imgStr.split(',').map(s => s.trim()).filter(s => s);
+        if (list.length > 0) {
+          const dayIndex = Math.floor((this.time.now.getTime()) / 86400000);
+          this.config.img = list[dayIndex % list.length];
+        }
+      }
+    }
+  }
+
+  // ✅ 新增：JSON 安全解析
+  parseJsonArraySafe(raw, fallback = []) {
+    try {
+      const x = JSON.parse(raw);
+      return Array.isArray(x) ? x : fallback;
+    } catch (e) {
+      return fallback;
+    }
+  }
+
+  loadJsonData() {
+    const getJsonEnv = (k) => {
+      try {
+        if (!this.env[k]) return [];
+        const v = JSON.parse(this.env[k]);
+        return Array.isArray(v) ? v : [];
+      } catch (e) {
+        return [];
+      }
+    };
+
+    // ✅ 修复：DB JSON 也做容错，避免坏 JSON 直接崩
+    this.LINKS_DATA = this.dbSettings.links !== undefined
+      ? this.parseJsonArraySafe(this.dbSettings.links, getJsonEnv('LINKS'))
+      : getJsonEnv('LINKS');
+
+    this.FRIENDS_DATA = this.dbSettings.friends !== undefined
+      ? this.parseJsonArraySafe(this.dbSettings.friends, getJsonEnv('FRIENDS'))
+      : getJsonEnv('FRIENDS');
+  }
+
+  // ------------------------------------------------------------------------
+  // [模块 2] 路由
+  // ------------------------------------------------------------------------
+  async handle() {
+    await this.initConfig();
+    const path = this.url.pathname;
+
+    if (path === '/message') return this.route_MessageDetail();
+    if (path === '/contact') return this.route_Contact();
+    if (path === `${this.ADMIN_PATH}/api/logs`) return this.api_GetLogs();
+    if (path === `${this.ADMIN_PATH}/api/settings`) return this.api_SaveSettings();
+    if (path === `${this.ADMIN_PATH}/logout`) return this.route_AdminLogout();
+    if (path === this.ADMIN_PATH) return this.route_AdminPage();
+
+    if (path.startsWith('/go/') || path.startsWith('/fgo/')) {
+      this.loadJsonData();
+      return this.route_Redirect(path);
     }
 
-    // ------------------------------------------------------------------------
-    // [模块 2] 路由
-    // ------------------------------------------------------------------------
-    async handle() {
-        await this.initConfig();
-        const path = this.url.pathname;
+    this.loadJsonData();
+    return this.route_HomePage();
+  }
 
-        if (path === '/message') return this.route_MessageDetail();
-        if (path === '/contact') return this.route_Contact();
-        if (path === `${this.ADMIN_PATH}/api/logs`) return this.api_GetLogs();
-        if (path === `${this.ADMIN_PATH}/api/settings`) return this.api_SaveSettings();
-        if (path === `${this.ADMIN_PATH}/logout`) return this.route_AdminLogout();
-        if (path === this.ADMIN_PATH) return this.route_AdminPage();
+  // ------------------------------------------------------------------------
+  // [模块 3] 路由控制器
+  // ------------------------------------------------------------------------
+  async route_Redirect(path) {
+    const parts = path.split("/").filter(Boolean);
+    if (parts.length < 2) return new Response('Invalid URL', { status: 400 });
 
-        if (path.startsWith('/go/') || path.startsWith('/fgo/')) {
-            this.loadJsonData();
-            return this.route_Redirect(path);
-        }
+    const type = parts[0] === 'go' ? 'link' : 'friend';
+    const id = parts[1];
+    const isBackup = parts[2] === "backup";
 
-        this.loadJsonData();
-        return this.route_HomePage();
+    const dataSet = type === 'link' ? this.LINKS_DATA : this.FRIENDS_DATA;
+    const item = dataSet.find(l => l.id === id);
+
+    if (!item) return new Response('Target not found', { status: 404 });
+
+    let targetUrl = item.url;
+    let logName = item.name;
+
+    if (type === 'link' && isBackup && item.backup_url) {
+      targetUrl = item.backup_url;
+      logName += "(备用)";
     }
 
-    // ------------------------------------------------------------------------
-    // [模块 3] 路由控制器
-    // ------------------------------------------------------------------------
-    async route_Redirect(path) {
-        const parts = path.split("/").filter(Boolean);
-        if (parts.length < 2) return new Response('Invalid URL', { status: 400 });
+    if (!targetUrl) return new Response('No valid URL available', { status: 400 });
 
-        const type = parts[0] === 'go' ? 'link' : 'friend';
-        const id = parts[1];
-        const isBackup = parts[2] === "backup";
-
-        const dataSet = type === 'link' ? this.LINKS_DATA : this.FRIENDS_DATA;
-        const item = dataSet.find(l => l.id === id);
-
-        if (!item) return new Response('Target not found', { status: 404 });
-
-        let targetUrl = item.url;
-        let logName = item.name;
-
-        if (type === 'link' && isBackup && item.backup_url) {
-            targetUrl = item.backup_url;
-            logName += "(备用)";
-        }
-
-        if (!targetUrl) return new Response('No valid URL available', { status: 400 });
-
-        if (this.env.db) {
-            this.ctx.waitUntil(this.db_recordClick(isBackup ? `${id}_backup` : id, logName, type));
-        }
-
-        return Response.redirect(targetUrl, 302);
+    if (this.env.db) {
+      this.ctx.waitUntil(this.db_recordClick(isBackup ? `${id}_backup` : id, logName, type));
     }
 
-    route_MessageDetail() {
-        const dataStr = this.url.searchParams.get('d');
-        let msgData = { c: '未知', m: '内容解析失败或已损坏', t: this.time.fullStr };
-        if (dataStr) { try { msgData = JSON.parse(decodeURIComponent(atob(dataStr))); } catch (e) {} }
-        return new Response(this.render_MessageDetail(msgData), { headers: { "content-type": "text/html;charset=UTF-8" } });
+    return Response.redirect(targetUrl, 302);
+  }
+
+  route_MessageDetail() {
+    const dataStr = this.url.searchParams.get('d');
+    let msgData = { c: '未知', m: '内容解析失败或已损坏', t: this.time.fullStr };
+    if (dataStr) { try { msgData = JSON.parse(decodeURIComponent(atob(dataStr))); } catch (e) {} }
+    return new Response(this.render_MessageDetail(msgData), { headers: { "content-type": "text/html;charset=UTF-8" } });
+  }
+
+  async route_Contact() {
+    if (this.request.method === 'GET') {
+      return new Response(this.render_ContactPage(), { headers: { "content-type": "text/html;charset=UTF-8" } });
     }
+    if (this.request.method === 'POST') {
+      try {
+        const formData = await this.request.formData();
+        const contactInfo = String(formData.get('guest_contact') || '匿名访客').slice(0, 120);
+        const messageContent = String(formData.get('message') || '无内容').slice(0, 5000);
 
-    async route_Contact() {
-        if (this.request.method === 'GET') {
-            return new Response(this.render_ContactPage(), { headers: { "content-type": "text/html;charset=UTF-8" } });
-        }
-        if (this.request.method === 'POST') {
-            try {
-                const formData = await this.request.formData();
-                const contactInfo = formData.get('guest_contact') || '匿名访客';
-                const messageContent = formData.get('message') || '无内容';
+        if (!this.config.push) return new Response('⚠️ 站长尚未配置接收通道', { status: 500 });
 
-                if (!this.config.push) return new Response('⚠️ 站长尚未配置接收通道', { status: 500 });
+        const payload = JSON.stringify({ c: contactInfo, m: messageContent, t: this.time.fullStr });
+        const detailUrl = `${this.config.host}/message?d=${btoa(encodeURIComponent(payload))}`;
+        const shortMsg = messageContent.length > 60 ? messageContent.substring(0, 60) + '...' : messageContent;
 
-                const payload = JSON.stringify({ c: contactInfo, m: messageContent, t: this.time.fullStr });
-                const detailUrl = `${this.config.host}/message?d=${btoa(encodeURIComponent(payload))}`;
-                const shortMsg = messageContent.length > 60 ? messageContent.substring(0, 60) + '...' : messageContent;
-
-                await fetch(this.config.push, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        title: `💬 导航站留言: ${contactInfo}`,
-                        content: `时间: ${this.time.fullStr}\n内容: ${shortMsg}\n\n👉 点击卡片查看完整详情`,
-                        url: detailUrl
-                    })
-                });
-                return new Response('✅ 发送成功！站长已收到你的留言', { status: 200 });
-            } catch (e) {
-                return new Response('❌ 发送失败，请稍后重试', { status: 500 });
-            }
-        }
-    }
-
-    route_HomePage() {
-        return new Response(this.render_HomePage(), { headers: { "content-type": "text/html;charset=UTF-8" } });
-    }
-
-    async route_AdminPage() {
-        const cookie = this.request.headers.get('Cookie') || '';
-
-        if (this.request.method === 'POST') {
-            const formData = await this.request.formData();
-            const password = formData.get('password') || '';
-            if (password.length > 100) {
-                return new Response(this.render_LoginPage('密码长度异常'), { headers: { "content-type": "text/html;charset=UTF-8" } });
-            }
-            if (password === this.config.admin_pass) {
-                return new Response(null, {
-                    status: 302,
-                    headers: {
-                        'Location': this.ADMIN_PATH,
-                        'Set-Cookie': `${this.COOKIE_NAME}=true; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Strict`
-                    }
-                });
-            } else {
-                return new Response(this.render_LoginPage('密码错误'), { headers: { "content-type": "text/html;charset=UTF-8" } });
-            }
-        }
-
-        if (!cookie.includes(`${this.COOKIE_NAME}=true`)) {
-            return new Response(this.render_LoginPage(''), { headers: { "content-type": "text/html;charset=UTF-8" } });
-        }
-
-        this.loadJsonData();
-        const selectedDateOrMonth = this.getSafeParam(this.url.searchParams, 'm', this.time.dateKey);
-
-        try {
-            const dashboardData = await this.db_getDashboardData(selectedDateOrMonth);
-            return new Response(this.render_AdminDashboard(dashboardData, selectedDateOrMonth), {
-                headers: { "content-type": "text/html;charset=UTF-8" }
-            });
-        } catch (dbErr) {
-            return new Response(`Data Error: ${dbErr.message}`, { status: 500 });
-        }
-    }
-
-    route_AdminLogout() {
-        return new Response(null, {
-            status: 302,
-            headers: {
-                'Location': this.ADMIN_PATH,
-                'Set-Cookie': `${this.COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`
-            }
+        await fetch(this.config.push, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            title: `💬 导航站留言: ${contactInfo}`,
+            content: `时间: ${this.time.fullStr}\n内容: ${shortMsg}\n\n👉 点击卡片查看完整详情`,
+            url: detailUrl
+          })
         });
+        return new Response('✅ 发送成功！站长已收到你的留言', { status: 200 });
+      } catch (e) {
+        return new Response('❌ 发送失败，请稍后重试', { status: 500 });
+      }
+    }
+    // ✅ 修复：避免 undefined
+    return new Response('Method not allowed', { status: 405 });
+  }
+
+  route_HomePage() {
+    return new Response(this.render_HomePage(), { headers: { "content-type": "text/html;charset=UTF-8" } });
+  }
+
+  // ✅ 新增：Cookie 解析 + 鉴权
+  parseCookies() {
+    const raw = this.request.headers.get('Cookie') || '';
+    const out = {};
+    raw.split(';').forEach(p => {
+      const i = p.indexOf('=');
+      if (i > -1) {
+        const k = p.slice(0, i).trim();
+        const v = p.slice(i + 1).trim();
+        out[k] = decodeURIComponent(v);
+      }
+    });
+    return out;
+  }
+
+  isAuthed() {
+    const c = this.parseCookies();
+    return c[this.COOKIE_NAME] === 'true';
+  }
+
+  async route_AdminPage() {
+    if (this.request.method === 'POST') {
+      const formData = await this.request.formData();
+      const password = formData.get('password') || '';
+      if (password.length > 100) {
+        return new Response(this.render_LoginPage('密码长度异常'), { headers: { "content-type": "text/html;charset=UTF-8" } });
+      }
+      if (password === this.config.admin_pass) {
+        return new Response(null, {
+          status: 302,
+          headers: {
+            'Location': this.ADMIN_PATH,
+            'Set-Cookie': `${this.COOKIE_NAME}=true; Path=/; Max-Age=2592000; HttpOnly; Secure; SameSite=Strict`
+          }
+        });
+      } else {
+        return new Response(this.render_LoginPage('密码错误'), { headers: { "content-type": "text/html;charset=UTF-8" } });
+      }
     }
 
-    async api_GetLogs() {
-        if (this.request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
-        const cookie = this.request.headers.get('Cookie') || '';
-        if (!cookie.includes(`${this.COOKIE_NAME}=true`)) return new Response('Unauthorized', { status: 401 });
-
-        const id = this.getSafeParam(this.url.searchParams, 'id');
-        const m = this.getSafeParam(this.url.searchParams, 'm', this.time.dateKey);
-
-        if (!this.env.db) return new Response('Database not available', { status: 500 });
-
-        try {
-            let normalized = m.replace('_', '-').substring(0, 7);
-            const queryParam = /^\d{4}-\d{2}$/.test(normalized) ? m.replace('_', '-') : this.time.dateKey.replace('_', '-');
-            const { results } = await this.env.db.prepare("SELECT click_time, ip_address, user_agent FROM logs WHERE link_id = ? AND click_time LIKE ? || '%' ORDER BY id DESC LIMIT 50").bind(id, queryParam).all();
-            return new Response(JSON.stringify(results || []), { headers: { "content-type": "application/json" } });
-        } catch (dbErr) {
-            return new Response('Failed to fetch logs', { status: 500 });
-        }
+    if (!this.isAuthed()) {
+      return new Response(this.render_LoginPage(''), { headers: { "content-type": "text/html;charset=UTF-8" } });
     }
 
-    async api_SaveSettings() {
-        if (this.request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
-        const cookie = this.request.headers.get('Cookie') || '';
-        if (!cookie.includes(`${this.COOKIE_NAME}=true`)) return new Response('Unauthorized', { status: 401 });
+    this.loadJsonData();
+    const selectedDateOrMonth = this.getSafeParam(this.url.searchParams, 'm', this.time.dateKey);
 
-        try {
-            const body = await this.request.json();
-            const stmts = Object.keys(body).map(k => this.env.db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").bind(k, String(body[k])));
-            await this.env.db.batch(stmts);
-            return new Response('OK');
-        } catch (e) {
-            return new Response('Save failed', { status: 500 });
-        }
+    try {
+      const dashboardData = await this.db_getDashboardData(selectedDateOrMonth);
+      return new Response(this.render_AdminDashboard(dashboardData, selectedDateOrMonth), {
+        headers: { "content-type": "text/html;charset=UTF-8" }
+      });
+    } catch (dbErr) {
+      return new Response(`Data Error: ${dbErr.message}`, { status: 500 });
     }
+  }
 
-    // ------------------------------------------------------------------------
-    // [模块 4] 数据库
-    // ------------------------------------------------------------------------
-    async db_recordClick(id, name, type) {
-        try {
-            const ip = this.request.headers.get('CF-Connecting-IP') || 'unknown';
-            const userAgent = this.request.headers.get('User-Agent') || 'unknown';
-            const { dateKey, fullStr, year, todayStr } = this.time;
+  route_AdminLogout() {
+    return new Response(null, {
+      status: 302,
+      headers: {
+        'Location': this.ADMIN_PATH,
+        'Set-Cookie': `${this.COOKIE_NAME}=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Strict`
+      }
+    });
+  }
 
-            await this.env.db.prepare("INSERT INTO logs (link_id, click_time, month_key, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)").bind(id, fullStr, dateKey, ip, userAgent).run();
-            await this.env.db.prepare(`INSERT INTO stats (id, name, type, total_clicks, year_clicks, month_clicks, day_clicks, last_year, last_month, last_day, last_time) VALUES (?1, ?2, ?3, 1, 1, 1, 1, ?4, ?5, ?7, ?6) ON CONFLICT(id) DO UPDATE SET total_clicks = total_clicks + 1, year_clicks = CASE WHEN last_year = ?4 THEN year_clicks + 1 ELSE 1 END, month_clicks = CASE WHEN last_month = ?5 THEN month_clicks + 1 ELSE 1 END, day_clicks = CASE WHEN last_day = ?7 THEN day_clicks + 1 ELSE 1 END, last_year = ?4, last_month = ?5, last_day = ?7, last_time = ?6, name = ?2, type = ?3`).bind(id, name, type, year, dateKey, fullStr, todayStr).run();
-        } catch (e) {
-            console.error("DB Record Error:", e);
-        }
+  async api_GetLogs() {
+    if (this.request.method !== 'GET') return new Response('Method not allowed', { status: 405 });
+    if (!this.isAuthed()) return new Response('Unauthorized', { status: 401 });
+
+    const id = this.getSafeParam(this.url.searchParams, 'id');
+    const m = this.getSafeParam(this.url.searchParams, 'm', this.time.dateKey);
+
+    if (!this.env.db) return new Response('Database not available', { status: 500 });
+
+    try {
+      let normalized = m.replace('_', '-').substring(0, 7);
+      const queryParam = /^\d{4}-\d{2}$/.test(normalized) ? m.replace('_', '-') : this.time.dateKey.replace('_', '-');
+      const { results } = await this.env.db.prepare("SELECT click_time, ip_address, user_agent FROM logs WHERE link_id = ? AND click_time LIKE ? || '%' ORDER BY id DESC LIMIT 50").bind(id, queryParam).all();
+      return new Response(JSON.stringify(results || []), { headers: { "content-type": "application/json" } });
+    } catch (dbErr) {
+      return new Response('Failed to fetch logs', { status: 500 });
     }
+  }
 
-    async db_getDashboardData(selectedDateOrMonth) {
-        if (!this.env.db) throw new Error('Database not bound');
+  async api_SaveSettings() {
+    if (this.request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+    if (!this.isAuthed()) return new Response('Unauthorized', { status: 401 });
 
-        const currentMonthKey = selectedDateOrMonth.replace('-', '_').substring(0, 7);
-        const queryParam = selectedDateOrMonth.replace('_', '-');
-        const isDayMode = selectedDateOrMonth.length > 7 && /^\d{4}-\d{2}-\d{2}$/.test(selectedDateOrMonth);
-
-        const queries = [
-            this.env.db.prepare("SELECT id, total_clicks, last_time FROM stats").all().catch(() => ({ results: [] })),
-            this.env.db.prepare("SELECT link_id, COUNT(*) as count FROM logs WHERE click_time LIKE ? || '%' GROUP BY link_id").bind(this.time.todayStr).all().catch(() => ({ results: [] })),
-            this.env.db.prepare("SELECT link_id, COUNT(*) as count FROM logs WHERE click_time LIKE ? || '%' GROUP BY link_id").bind(queryParam).all().catch(() => ({ results: [] }))
-        ];
-
-        if (isDayMode) {
-            queries.push(this.env.db.prepare("SELECT link_id, COUNT(*) as count FROM logs WHERE month_key = ? GROUP BY link_id").bind(currentMonthKey).all().catch(() => ({ results: [] })));
-        } else {
-            queries.push(Promise.resolve({ results: [] }));
-        }
-        queries.push(this.env.db.prepare("SELECT COUNT(*) as total FROM logs WHERE month_key = ?").bind(currentMonthKey).all().catch(() => ({ results: [{ total: 0 }] })));
-
-        const [statsResult, dailyResult, periodResult, monthContextResult, monthTotalResult] = await Promise.all(queries);
-
-        const statsMap = new Map(); if (statsResult?.results) statsResult.results.forEach(r => statsMap.set(r.id, r));
-        const dailyMap = new Map(); if (dailyResult?.results) dailyResult.results.forEach(r => dailyMap.set(r.link_id, r.count));
-        const periodMap = new Map(); if (periodResult?.results) periodResult.results.forEach(r => periodMap.set(r.link_id, r.count));
-        const monthContextMap = new Map(); if (monthContextResult?.results) monthContextResult.results.forEach(r => monthContextMap.set(r.link_id, r.count));
-        const monthTotalClicks = monthTotalResult?.results?.[0]?.total || 0;
-
-        return { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode };
+    try {
+      const body = await this.request.json();
+      const allowed = new Set([
+        "admin_pass", "title", "subtitle", "img", "contact_url", "mail", "push", "host", "notice",
+        "promo_enable", "promo_badge", "promo_title", "promo_desc", "promo_url", "promo_format",
+        "links", "friends"
+      ]);
+      const stmts = Object.keys(body)
+        .filter(k => allowed.has(k))
+        .map(k => this.env.db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").bind(k, String(body[k])));
+      await this.env.db.batch(stmts);
+      return new Response('OK');
+    } catch (e) {
+      return new Response('Save failed', { status: 500 });
     }
+  }
 
-    getSafeParam(sp, key, def = '') { return sp.get(key)?.trim() || def; }
+  // ------------------------------------------------------------------------
+  // [模块 4] 数据库
+  // ------------------------------------------------------------------------
+  async db_recordClick(id, name, type) {
+    try {
+      const ip = this.request.headers.get('CF-Connecting-IP') || 'unknown';
+      const userAgent = this.request.headers.get('User-Agent') || 'unknown';
+      const { dateKey, fullStr, year, todayStr } = this.time;
 
-    safeCssUrl(url) {
-        return String(url || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      await this.env.db.prepare("INSERT INTO logs (link_id, click_time, month_key, ip_address, user_agent) VALUES (?, ?, ?, ?, ?)").bind(id, fullStr, dateKey, ip, userAgent).run();
+      await this.env.db.prepare(`INSERT INTO stats (id, name, type, total_clicks, year_clicks, month_clicks, day_clicks, last_year, last_month, last_day, last_time) VALUES (?1, ?2, ?3, 1, 1, 1, 1, ?4, ?5, ?7, ?6) ON CONFLICT(id) DO UPDATE SET total_clicks = total_clicks + 1, year_clicks = CASE WHEN last_year = ?4 THEN year_clicks + 1 ELSE 1 END, month_clicks = CASE WHEN last_month = ?5 THEN month_clicks + 1 ELSE 1 END, day_clicks = CASE WHEN last_day = ?7 THEN day_clicks + 1 ELSE 1 END, last_year = ?4, last_month = ?5, last_day = ?7, last_time = ?6, name = ?2, type = ?3`).bind(id, name, type, year, dateKey, fullStr, todayStr).run();
+    } catch (e) {
+      console.error("DB Record Error:", e);
     }
+  }
 
-    safeScriptJson(obj) {
-        return JSON.stringify(obj)
-            .replace(/</g, "\\u003c")
-            .replace(/>/g, "\\u003e")
-            .replace(/&/g, "\\u0026")
-            .replace(/\u2028/g, "\\u2028")
-            .replace(/\u2029/g, "\\u2029");
+  async db_getDashboardData(selectedDateOrMonth) {
+    if (!this.env.db) throw new Error('Database not bound');
+
+    const currentMonthKey = selectedDateOrMonth.replace('-', '_').substring(0, 7);
+    const queryParam = selectedDateOrMonth.replace('_', '-');
+    const isDayMode = selectedDateOrMonth.length > 7 && /^\d{4}-\d{2}-\d{2}$/.test(selectedDateOrMonth);
+
+    const queries = [
+      this.env.db.prepare("SELECT id, total_clicks, last_time FROM stats").all().catch(() => ({ results: [] })),
+      this.env.db.prepare("SELECT link_id, COUNT(*) as count FROM logs WHERE click_time LIKE ? || '%' GROUP BY link_id").bind(this.time.todayStr).all().catch(() => ({ results: [] })),
+      this.env.db.prepare("SELECT link_id, COUNT(*) as count FROM logs WHERE click_time LIKE ? || '%' GROUP BY link_id").bind(queryParam).all().catch(() => ({ results: [] }))
+    ];
+
+    if (isDayMode) {
+      queries.push(this.env.db.prepare("SELECT link_id, COUNT(*) as count FROM logs WHERE month_key = ? GROUP BY link_id").bind(currentMonthKey).all().catch(() => ({ results: [] })));
+    } else {
+      queries.push(Promise.resolve({ results: [] }));
     }
+    queries.push(this.env.db.prepare("SELECT COUNT(*) as total FROM logs WHERE month_key = ?").bind(currentMonthKey).all().catch(() => ({ results: [{ total: 0 }] })));
 
-    getBgShellStyle() {
-        return `background-color:#0f172a;background-size:cover;background-position:center;background-repeat:no-repeat;`;
-    }
+    const [statsResult, dailyResult, periodResult, monthContextResult, monthTotalResult] = await Promise.all(queries);
 
-    render_BgRuntimeScript() {
-        const primary = this.safeCssUrl(this.config.img);
-        const fallback = this.safeCssUrl(this.DEFAULT_IMG);
-        return `<script>
+    const statsMap = new Map(); if (statsResult?.results) statsResult.results.forEach(r => statsMap.set(r.id, r));
+    const dailyMap = new Map(); if (dailyResult?.results) dailyResult.results.forEach(r => dailyMap.set(r.link_id, r.count));
+    const periodMap = new Map(); if (periodResult?.results) periodResult.results.forEach(r => periodMap.set(r.link_id, r.count));
+    const monthContextMap = new Map(); if (monthContextResult?.results) monthContextResult.results.forEach(r => monthContextMap.set(r.link_id, r.count));
+    const monthTotalClicks = monthTotalResult?.results?.[0]?.total || 0;
+
+    return { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode };
+  }
+
+  getSafeParam(sp, key, def = '') { return sp.get(key)?.trim() || def; }
+
+  safeCssUrl(url) {
+    return String(url || '').replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  }
+
+  safeScriptJson(obj) {
+    return JSON.stringify(obj)
+      .replace(/</g, "\\u003c")
+      .replace(/>/g, "\\u003e")
+      .replace(/&/g, "\\u0026")
+      .replace(/\u2028/g, "\\u2028")
+      .replace(/\u2029/g, "\\u2029");
+  }
+
+  getBgShellStyle() {
+    return `background-color:#0f172a;background-size:cover;background-position:center;background-repeat:no-repeat;`;
+  }
+
+  render_BgRuntimeScript() {
+    const primary = this.safeCssUrl(this.config.img);
+    const fallback = this.safeCssUrl(this.DEFAULT_IMG);
+    return `<script>
 (function(){
   if(window.__bgInitDone) return;
   window.__bgInitDone = true;
@@ -372,71 +466,76 @@ class NooMiNav {
   }
 })();
 </script>`;
+  }
+
+  escapeHtml(str = '') {
+    return String(str)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  // ✅ 新增：属性场景转义
+  escapeAttr(str = '') {
+    return this.escapeHtml(str).replace(/`/g, '&#96;');
+  }
+
+  renderRichContent(content = '', format = 'html') {
+    const raw = String(content || '');
+    const mode = String(format || 'html').toLowerCase();
+
+    if (mode === 'html') {
+      return raw;
     }
 
-    escapeHtml(str = '') {
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;')
-            .replace(/'/g, '&#39;');
-    }
+    let s = this.escapeHtml(raw);
 
-    renderRichContent(content = '', format = 'html') {
-        const raw = String(content || '');
-        const mode = String(format || 'html').toLowerCase();
+    s = s.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>');
+    s = s.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>');
+    s = s.replace(/^#\s+(.*)$/gm, '<h1>$1</h1>');
 
-        if (mode === 'html') {
-            return raw;
+    s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+    s = s.replace(/\*(.*?)\*/g, '<em>$1</em>');
+    s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
+    s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
+
+    const lines = s.split('\n');
+    let html = [];
+    let inList = false;
+
+    for (let line of lines) {
+      if (/^\s*[-*]\s+/.test(line)) {
+        if (!inList) {
+          html.push('<ul>');
+          inList = true;
         }
-
-        let s = this.escapeHtml(raw);
-
-        s = s.replace(/^###\s+(.*)$/gm, '<h3>$1</h3>');
-        s = s.replace(/^##\s+(.*)$/gm, '<h2>$1</h2>');
-        s = s.replace(/^#\s+(.*)$/gm, '<h1>$1</h1>');
-
-        s = s.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
-        s = s.replace(/\*(.*?)\*/g, '<em>$1</em>');
-        s = s.replace(/`([^`]+)`/g, '<code>$1</code>');
-        s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/g, '<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>');
-
-        const lines = s.split('\n');
-        let html = [];
-        let inList = false;
-
-        for (let line of lines) {
-            if (/^\s*[-*]\s+/.test(line)) {
-                if (!inList) {
-                    html.push('<ul>');
-                    inList = true;
-                }
-                html.push('<li>' + line.replace(/^\s*[-*]\s+/, '') + '</li>');
-            } else {
-                if (inList) {
-                    html.push('</ul>');
-                    inList = false;
-                }
-                if (line.trim() === '') {
-                    html.push('');
-                } else if (/^<h[1-3]>/.test(line)) {
-                    html.push(line);
-                } else {
-                    html.push('<p>' + line + '</p>');
-                }
-            }
+        html.push('<li>' + line.replace(/^\s*[-*]\s+/, '') + '</li>');
+      } else {
+        if (inList) {
+          html.push('</ul>');
+          inList = false;
         }
-        if (inList) html.push('</ul>');
-
-        return html.join('\n');
+        if (line.trim() === '') {
+          html.push('');
+        } else if (/^<h[1-3]>/.test(line)) {
+          html.push(line);
+        } else {
+          html.push('<p>' + line + '</p>');
+        }
+      }
     }
+    if (inList) html.push('</ul>');
 
-    // ------------------------------------------------------------------------
-    // [模块 5] 渲染
-    // ------------------------------------------------------------------------
-    render_Head(t) {
-        return `<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${t}</title><style>
+    return html.join('\n');
+  }
+
+  // ------------------------------------------------------------------------
+  // [模块 5] 渲染
+  // ------------------------------------------------------------------------
+  render_Head(t) {
+    return `<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${this.escapeHtml(t)}</title><style>
         :root{
           --glass:rgba(15,23,42,0.58);
           --border:rgba(255,255,255,0.15);
@@ -462,10 +561,15 @@ class NooMiNav {
         }
         h1,div,span,a,p,h2,h3,label,button,input,textarea{text-shadow:var(--text-shadow)}
         </style>`;
-    }
+  }
 
-    render_MessageDetail(data) {
-        return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>留言详情</title><style>
+  render_MessageDetail(data) {
+    // ✅ 修复：留言详情输出转义，防止 XSS
+    const t = this.escapeHtml(data?.t || '');
+    const c = this.escapeHtml(data?.c || '');
+    const m = this.escapeHtml(data?.m || '');
+
+    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>留言详情</title><style>
         body { font-family: ${this.FONT_STACK}; background: #f3f4f6; margin: 0; padding: 20px; display: flex; justify-content: center; min-height: 100vh; box-sizing: border-box; }
         .ticket-card { background: #ffffff; border-radius: 18px; box-shadow: 0 10px 30px rgba(0,0,0,0.08); width: 100%; max-width: 600px; padding: 40px; margin-top: 5vh; height: fit-content; border-top: 6px solid #8b5cf6; }
         .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 25px; }
@@ -482,11 +586,11 @@ class NooMiNav {
           .sender { font-size: 1.2rem; }
           .message { font-size: 1rem; }
         }
-        </style></head><body><div class="ticket-card"><div class="header"><span class="badge">INBOX MESSAGE</span><span class="time">${data.t}</span></div><div class="sender-box"><div class="label">Contact / 发件人</div><h2 class="sender">${data.c}</h2></div><div class="divider"></div><div class="label">Message / 内容</div><div class="message">${data.m}</div><div class="footer">🔒 Encrypted transmission powered by Cloudflare</div></div></body></html>`;
-    }
+        </style></head><body><div class="ticket-card"><div class="header"><span class="badge">INBOX MESSAGE</span><span class="time">${t}</span></div><div class="sender-box"><div class="label">Contact / 发件人</div><h2 class="sender">${c}</h2></div><div class="divider"></div><div class="label">Message / 内容</div><div class="message">${m}</div><div class="footer">🔒 Encrypted transmission powered by Cloudflare</div></div></body></html>`;
+  }
 
-    render_ContactPage() {
-        return `<!DOCTYPE html><html><head>${this.render_Head(this.config.title)}<style>
+  render_ContactPage() {
+    return `<!DOCTYPE html><html><head>${this.render_Head(this.config.title)}<style>
         .box { padding: 40px; width: 380px; text-align: left; }
         h2 { font-size: 1.6rem; margin: 0 0 10px 0; display: flex; align-items: center; gap: 8px; }
         p.desc { color: #cbd5e1; font-size: 0.92rem; margin-bottom: 25px; line-height: 1.65; }
@@ -533,10 +637,10 @@ class NooMiNav {
         .back a { color: #94a3b8; text-decoration: none; font-size: 0.85rem; transition: 0.2s; }
         .back a:hover { color: #fff; }
         </style></head><body style="${this.getBgShellStyle()} display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;"><div class="glass-panel box"><h2>📝 给我留言</h2><p class="desc">有任何问题、疑问？<br>留下联系方式，看到了就会联系，优先邮箱或者QQ。</p><form id="msgForm"><label>留下你的联系方式？</label><input type="text" name="guest_contact" placeholder="邮箱或者QQ" required><label>你想说什么？</label><textarea name="message" placeholder="写下你的留言内容..." required></textarea><button type="submit" id="submitBtn">发送留言</button></form><div id="status" class="status"></div><div class="back"><a href="/">← 返回导航主页</a></div></div>${this.render_BgRuntimeScript()}<script>document.getElementById('msgForm').addEventListener('submit', async (e) => { e.preventDefault(); const btn = document.getElementById('submitBtn'); const status = document.getElementById('status'); btn.disabled = true; btn.innerText = '发送中...'; status.innerText = ''; try { const res = await fetch('/contact', { method: 'POST', body: new FormData(e.target) }); const text = await res.text(); status.style.color = res.ok ? '#34d399' : '#f87171'; status.innerText = text; if(res.ok) e.target.reset(); } catch(err) { status.style.color = '#f87171'; status.innerText = '网络错误，请稍后重试'; } finally { btn.disabled = false; btn.innerText = '发送留言'; } });</script></body></html>`;
-    }
+  }
 
-    render_LoginPage(errorMsg = '') {
-        return `<!DOCTYPE html><html><head>${this.render_Head(this.config.title)}<style>
+  render_LoginPage(errorMsg = '') {
+    return `<!DOCTYPE html><html><head>${this.render_Head(this.config.title)}<style>
         .box { padding: 50px 40px; text-align: center; width: 340px; display: flex; flex-direction: column; align-items: center; }
         h1 { font-size: 1.8rem; margin-bottom: 30px; }
         form { width: 100%; display: flex; flex-direction: column; align-items: center; }
@@ -576,51 +680,54 @@ class NooMiNav {
         }
         button:hover { transform: translateY(-2px); box-shadow: 0 8px 22px rgba(59,130,246,0.35); }
         .error-msg { color: #f87171; margin-bottom: 15px; font-size: 0.9rem; min-height: 20px; }
-        </style></head><body style="${this.getBgShellStyle()} display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;"><div class="glass-panel box"><h1>🔐 管理后台</h1>${errorMsg ? `<div class="error-msg">❌ ${errorMsg}</div>` : ''}<form method="POST" action="${this.ADMIN_PATH}"><input type="password" name="password" placeholder="请输入访问口令" required autofocus><button type="submit">立即登录</button></form></div>${this.render_BgRuntimeScript()}</body></html>`;
+        </style></head><body style="${this.getBgShellStyle()} display: flex; justify-content: center; align-items: center; min-height: 100vh; margin: 0;"><div class="glass-panel box"><h1>🔐 管理后台</h1>${errorMsg ? `<div class="error-msg">❌ ${this.escapeHtml(errorMsg)}</div>` : ''}<form method="POST" action="${this.ADMIN_PATH}"><input type="password" name="password" placeholder="请输入访问口令" required autofocus><button type="submit">立即登录</button></form></div>${this.render_BgRuntimeScript()}</body></html>`;
+  }
+
+  render_HomePage() {
+    const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
+    const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
+
+    // ✅ 修复：首页卡片文本转义
+    const cardsHtml = safeLinks.map(item => {
+      const itemId = this.escapeAttr(item.id || '');
+      const mainUrl = `/go/${itemId}`;
+      const backupHtml = item.backup_url ? `<a href="/go/${itemId}/backup" class="tag-backup" title="备用线路">备用</a>` : '';
+      const customTagHtml = item.tag ? `<span class="tag-special">${this.escapeHtml(item.tag)}</span>` : '';
+      return `<div class="glass-card resource-card-wrap"><a href="${mainUrl}" class="resource-main-link"><div class="card-icon">${this.escapeHtml(item.emoji || '🔗')}</div><div class="card-info"><h3 style="display:flex;align-items:center;flex-wrap:wrap;">${this.escapeHtml(item.name || '')}${customTagHtml}</h3><p>⚠️ ${this.escapeHtml(item.note || '无说明')}</p></div></a>${backupHtml}</div>`;
+    }).join('');
+
+    // ✅ 修复：友链文本转义
+    const friendsHtml = safeFriends.map((f) => `<a href="/fgo/${this.escapeAttr(f.id || '')}" target="_blank" class="glass-card partner-card">${this.escapeHtml(f.name || '')}</a>`).join('');
+
+    let fabHtml = `<div class="fab-container">`;
+    if (this.config.contact_url) fabHtml += `<a href="${this.escapeAttr(this.config.contact_url)}" target="_blank" class="fab-btn fab-telegram">💬 获取支持</a>`;
+    if (this.config.mail) fabHtml += `<a href="mailto:${this.escapeAttr(this.config.mail)}" class="fab-btn fab-mail">📧 发送邮件</a>`;
+    if (this.config.push) fabHtml += `<a href="/contact" class="fab-btn fab-push">📝 给我留言</a>`;
+    fabHtml += `</div>`;
+
+    let noticeHtml = '';
+    if (this.config.notice && this.config.notice.trim() !== '') {
+      noticeHtml = `<div class="glass-card notice-card"><div class="notice-title"><span class="heart-beat">❤️</span> 温馨提示</div><div class="notice-content">${this.config.notice}</div></div>`;
     }
 
-    render_HomePage() {
-        const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
-        const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
-
-        const cardsHtml = safeLinks.map(item => {
-            const mainUrl = `/go/${item.id}`;
-            const backupHtml = item.backup_url ? `<a href="/go/${item.id}/backup" class="tag-backup" title="备用线路">备用</a>` : '';
-            const customTagHtml = item.tag ? `<span class="tag-special">${item.tag}</span>` : '';
-            return `<div class="glass-card resource-card-wrap"><a href="${mainUrl}" class="resource-main-link"><div class="card-icon">${item.emoji || '🔗'}</div><div class="card-info"><h3 style="display:flex;align-items:center;flex-wrap:wrap;">${item.name}${customTagHtml}</h3><p>⚠️ ${item.note || '无说明'}</p></div></a>${backupHtml}</div>`;
-        }).join('');
-
-        const friendsHtml = safeFriends.map((f) => `<a href="/fgo/${f.id}" target="_blank" class="glass-card partner-card">${f.name}</a>`).join('');
-
-        let fabHtml = `<div class="fab-container">`;
-        if (this.config.contact_url) fabHtml += `<a href="${this.config.contact_url}" target="_blank" class="fab-btn fab-telegram">💬 获取支持</a>`;
-        if (this.config.mail) fabHtml += `<a href="mailto:${this.config.mail}" class="fab-btn fab-mail">📧 发送邮件</a>`;
-        if (this.config.push) fabHtml += `<a href="/contact" class="fab-btn fab-push">📝 给我留言</a>`;
-        fabHtml += `</div>`;
-
-        let noticeHtml = '';
-        if (this.config.notice && this.config.notice.trim() !== '') {
-            noticeHtml = `<div class="glass-card notice-card"><div class="notice-title"><span class="heart-beat">❤️</span> 温馨提示</div><div class="notice-content">${this.config.notice}</div></div>`;
-        }
-
-        let promoHtml = '';
-        if (String(this.config.promo_enable) === '1' && this.config.promo_url) {
-            const promoRendered = this.renderRichContent(this.config.promo_desc, this.config.promo_format);
-            promoHtml = `
-              <a href="${this.config.promo_url}"
+    let promoHtml = '';
+    if (String(this.config.promo_enable) === '1' && this.config.promo_url) {
+      const promoRendered = this.renderRichContent(this.config.promo_desc, this.config.promo_format);
+      promoHtml = `
+              <a href="${this.escapeAttr(this.config.promo_url)}"
                  target="_blank"
                  rel="noopener noreferrer"
                  class="glass-card promo-card">
-                <div class="promo-badge">${this.config.promo_badge || '推广支持'}</div>
+                <div class="promo-badge">${this.escapeHtml(this.config.promo_badge || '推广支持')}</div>
                 <div class="promo-content">
-                  <div class="promo-title">${this.config.promo_title || '推广支持'}</div>
+                  <div class="promo-title">${this.escapeHtml(this.config.promo_title || '推广支持')}</div>
                   <div class="promo-desc rich-content">${promoRendered}</div>
                 </div>
               </a>
             `;
-        }
+    }
 
-        return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${this.config.title}</title><style>
+    return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${this.escapeHtml(this.config.title)}</title><style>
           :root {
             --glass: rgba(255,255,255,0.14);
             --border: rgba(255,255,255,0.16);
@@ -1102,7 +1209,7 @@ class NooMiNav {
         </script></head><body>
         <button class="theme-toggle" title="切换主题">🌙</button>
         <div class="container">
-          <div class="header glass-card"><h1>${this.config.title}</h1><p>${this.config.subtitle}</p></div>
+          <div class="header glass-card"><h1>${this.escapeHtml(this.config.title)}</h1><p>${this.escapeHtml(this.config.subtitle)}</p></div>
 
           <div class="search-container">
             <div class="search-wrap">
@@ -1122,91 +1229,97 @@ class NooMiNav {
         ${fabHtml}
         ${this.render_BgRuntimeScript()}
         </body></html>`;
+  }
+
+  render_AdminDashboard(dbData, m) {
+    const { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode } = dbData;
+    const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
+    const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
+    const activeIds = new Set([...safeLinks.map(i => i.id), ...safeFriends.map(i => i.id)]);
+
+    let historyTotal = 0;
+    for (let v of statsMap.values()) {
+      if (activeIds.has(v.id)) historyTotal += (v.total_clicks || 0);
     }
 
-    render_AdminDashboard(dbData, m) {
-        const { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode } = dbData;
-        const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
-        const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
-        const activeIds = new Set([...safeLinks.map(i => i.id), ...safeFriends.map(i => i.id)]);
+    let viewTotalDenominator = 0;
+    if (isDayMode) {
+      for (let c of monthContextMap.values()) viewTotalDenominator += c;
+    } else {
+      for (let c of periodMap.values()) viewTotalDenominator += c;
+    }
 
-        let historyTotal = 0;
-        for (let v of statsMap.values()) {
-            if (activeIds.has(v.id)) historyTotal += (v.total_clicks || 0);
-        }
+    let prevDay = m, nextDay = m, prevMonthStr = "", nextMonthStr = "";
+    try {
+      if (isDayMode) {
+        const d = new Date(m);
+        d.setDate(d.getDate() - 1);
+        prevDay = d.toISOString().split('T')[0];
+        d.setDate(d.getDate() + 2);
+        nextDay = d.toISOString().split('T')[0];
+      }
+      const currentY_int = parseInt(m.substring(0, 4)), currentM_int = parseInt(m.substring(5, 7));
+      let prevM_Y = currentY_int, prevM_M = currentM_int - 1;
+      if (prevM_M === 0) { prevM_Y -= 1; prevM_M = 12; }
+      prevMonthStr = `${prevM_Y}_${String(prevM_M).padStart(2, '0')}`;
+      let nextM_Y = currentY_int, nextM_M = currentM_int + 1;
+      if (nextM_M === 13) { nextM_Y += 1; nextM_M = 1; }
+      nextMonthStr = `${nextM_Y}_${String(nextM_M).padStart(2, '0')}`;
+    } catch (e) {}
 
-        let viewTotalDenominator = 0;
+    const buildCard = (id, name, emoji, isMini) => {
+      const stat = statsMap.get(id) || { total_clicks: 0, last_time: '' };
+      const realTodayVal = dailyMap.get(id) || 0;
+      const selectedTargetVal = periodMap.get(id) || 0;
+      const monthContextVal = monthContextMap.get(id) || 0;
+      let col2Label, col2Val, col3Label, col3Val, progressVal = 0;
+
+      if (isDayMode) {
+        col2Label = (m === this.time.todayStr) ? "今日" : "当日";
+        col2Val = selectedTargetVal;
+        col3Label = "当月";
+        col3Val = monthContextVal;
+        progressVal = viewTotalDenominator > 0 ? ((monthContextVal / viewTotalDenominator) * 100).toFixed(1) : 0;
+      } else {
+        col2Label = "今日";
+        col2Val = realTodayVal;
+        col3Label = (m === this.time.dateKey) ? "本月" : "当月";
+        col3Val = selectedTargetVal;
+        progressVal = viewTotalDenominator > 0 ? ((selectedTargetVal / viewTotalDenominator) * 100).toFixed(1) : 0;
+      }
+
+      let timeDisplay = stat.last_time || '暂无';
+      let timeIcon = '🕒';
+      if (timeDisplay !== '暂无') {
         if (isDayMode) {
-            for (let c of monthContextMap.values()) viewTotalDenominator += c;
+          timeDisplay = timeDisplay.split(' ')[1] || timeDisplay;
         } else {
-            for (let c of periodMap.values()) viewTotalDenominator += c;
+          timeDisplay = timeDisplay.split(' ')[0].substring(5);
+          timeIcon = '📅';
         }
+      }
 
-        let prevDay = m, nextDay = m, prevMonthStr = "", nextMonthStr = "";
-        try {
-            if (isDayMode) {
-                const d = new Date(m);
-                d.setDate(d.getDate() - 1);
-                prevDay = d.toISOString().split('T')[0];
-                d.setDate(d.getDate() + 2);
-                nextDay = d.toISOString().split('T')[0];
-            }
-            const currentY_int = parseInt(m.substring(0, 4)), currentM_int = parseInt(m.substring(5, 7));
-            let prevM_Y = currentY_int, prevM_M = currentM_int - 1;
-            if (prevM_M === 0) { prevM_Y -= 1; prevM_M = 12; }
-            prevMonthStr = `${prevM_Y}_${String(prevM_M).padStart(2, '0')}`;
-            let nextM_Y = currentY_int, nextM_M = currentM_int + 1;
-            if (nextM_M === 13) { nextM_Y += 1; nextM_M = 1; }
-            nextMonthStr = `${nextM_Y}_${String(nextM_M).padStart(2, '0')}`;
-        } catch (e) {}
+      // ✅ 修复：onclick 注入风险
+      const safeId = this.escapeAttr(id || '');
+      const safeM = this.escapeAttr(m || '');
+      const safeName = this.escapeHtml(name || '');
+      const encodedName = encodeURIComponent(name || '');
 
-        const buildCard = (id, name, emoji, isMini) => {
-            const stat = statsMap.get(id) || { total_clicks: 0, last_time: '' };
-            const realTodayVal = dailyMap.get(id) || 0;
-            const selectedTargetVal = periodMap.get(id) || 0;
-            const monthContextVal = monthContextMap.get(id) || 0;
-            let col2Label, col2Val, col3Label, col3Val, progressVal = 0;
-
-            if (isDayMode) {
-                col2Label = (m === this.time.todayStr) ? "今日" : "当日";
-                col2Val = selectedTargetVal;
-                col3Label = "当月";
-                col3Val = monthContextVal;
-                progressVal = viewTotalDenominator > 0 ? ((monthContextVal / viewTotalDenominator) * 100).toFixed(1) : 0;
-            } else {
-                col2Label = "今日";
-                col2Val = realTodayVal;
-                col3Label = (m === this.time.dateKey) ? "本月" : "当月";
-                col3Val = selectedTargetVal;
-                progressVal = viewTotalDenominator > 0 ? ((selectedTargetVal / viewTotalDenominator) * 100).toFixed(1) : 0;
-            }
-
-            let timeDisplay = stat.last_time || '暂无';
-            let timeIcon = '🕒';
-            if (timeDisplay !== '暂无') {
-                if (isDayMode) {
-                    timeDisplay = timeDisplay.split(' ')[1] || timeDisplay;
-                } else {
-                    timeDisplay = timeDisplay.split(' ')[0].substring(5);
-                    timeIcon = '📅';
-                }
-            }
-
-            if (isMini) {
-                return `<div class="mini-card" onclick="openLog('${id}','${m}','${name}')">
+      if (isMini) {
+        return `<div class="mini-card" onclick="openLog('${safeId}','${safeM}','${encodedName}')">
                   <div class="mini-top">
-                    <span class="mini-name" title="${name}">${name}</span>
+                    <span class="mini-name" title="${safeName}">${safeName}</span>
                     <span class="mini-badge">${selectedTargetVal}</span>
                   </div>
-                  <div class="mini-meta">${timeDisplay}</div>
+                  <div class="mini-meta">${this.escapeHtml(timeDisplay)}</div>
                 </div>`;
-            }
+      }
 
-            return `<div class="stat-card" onclick="openLog('${id}','${m}','${name}')">
+      return `<div class="stat-card" onclick="openLog('${safeId}','${safeM}','${encodedName}')">
               <div class="stat-top">
                 <div class="stat-title-wrap">
-                  <span class="stat-emoji">${emoji || '🔗'}</span>
-                  <span class="stat-title">${name}</span>
+                  <span class="stat-emoji">${this.escapeHtml(emoji || '🔗')}</span>
+                  <span class="stat-title">${safeName}</span>
                 </div>
                 <span class="stat-pct">${progressVal}%</span>
               </div>
@@ -1225,45 +1338,46 @@ class NooMiNav {
                 </div>
               </div>
               <div class="progress"><div style="width:${progressVal}%"></div></div>
-              <div class="stat-foot">${timeIcon} ${timeDisplay}</div>
+              <div class="stat-foot">${timeIcon} ${this.escapeHtml(timeDisplay)}</div>
             </div>`;
-        };
+    };
 
-        const linkHtml = safeLinks.map(i => buildCard(i.id, i.name, i.emoji, false)).join('');
-        const friendHtml = safeFriends.map(i => buildCard(i.id, i.name, '', true)).join('');
+    const linkHtml = safeLinks.map(i => buildCard(i.id, i.name, i.emoji, false)).join('');
+    const friendHtml = safeFriends.map(i => buildCard(i.id, i.name, '', true)).join('');
 
-        const sysSettings = {
-            admin_pass: this.config.admin_pass,
-            title: this.config.title,
-            subtitle: this.config.subtitle,
-            img: this.dbSettings.img || this.env.img || "",
-            contact_url: this.config.contact_url,
-            mail: this.config.mail,
-            push: this.dbSettings.push || this.env.push || "",
-            host: this.dbSettings.host || this.env.host || "",
-            notice: this.config.notice,
+    const sysSettings = {
+      admin_pass: this.config.admin_pass,
+      title: this.config.title,
+      subtitle: this.config.subtitle,
+      img: this.dbSettings.img || this.env.img || "",
+      contact_url: this.config.contact_url,
+      mail: this.config.mail,
+      push: this.dbSettings.push || this.env.push || "",
+      host: this.dbSettings.host || this.env.host || "",
+      notice: this.config.notice,
 
-            promo_enable: this.config.promo_enable,
-            promo_badge: this.config.promo_badge,
-            promo_title: this.config.promo_title,
-            promo_desc: this.config.promo_desc,
-            promo_url: this.config.promo_url,
-            promo_format: this.config.promo_format,
+      promo_enable: this.config.promo_enable,
+      promo_badge: this.config.promo_badge,
+      promo_title: this.config.promo_title,
+      promo_desc: this.config.promo_desc,
+      promo_url: this.config.promo_url,
+      promo_format: this.config.promo_format,
 
-            links: JSON.stringify(this.LINKS_DATA, null, 2),
-            friends: JSON.stringify(this.FRIENDS_DATA, null, 2)
-        };
+      links: JSON.stringify(this.LINKS_DATA, null, 2),
+      friends: JSON.stringify(this.FRIENDS_DATA, null, 2)
+    };
 
-        let noticeHtmlPreview = '';
-        if (this.config.notice && this.config.notice.trim() !== '') {
-            noticeHtmlPreview = `<div class="panel notice-panel"><div class="panel-head"><span>❤️</span><strong>公告预览</strong></div><div class="notice-preview">${this.config.notice}</div></div>`;
-        }
+    let noticeHtmlPreview = '';
+    if (this.config.notice && this.config.notice.trim() !== '') {
+      noticeHtmlPreview = `<div class="panel notice-panel"><div class="panel-head"><span>❤️</span><strong>公告预览</strong></div><div class="notice-preview">${this.config.notice}</div></div>`;
+    }
 
-        const promoPreview = String(this.config.promo_enable) === '1'
-            ? `<div class="panel notice-panel"><div class="panel-head"><span>📣</span><strong>推广卡预览</strong></div><div class="promo-preview-box"><div class="promo-preview-badge">${this.escapeHtml(this.config.promo_badge || '推广支持')}</div><div class="promo-preview-main"><div class="promo-preview-title">${this.escapeHtml(this.config.promo_title || '推广支持')}</div><div class="promo-preview-desc">${this.renderRichContent(this.config.promo_desc || '', this.config.promo_format)}</div></div></div></div>`
-            : '';
+    const promoPreview = String(this.config.promo_enable) === '1'
+      ? `<div class="panel notice-panel"><div class="panel-head"><span>📣</span><strong>推广卡预览</strong></div><div class="promo-preview-box"><div class="promo-preview-badge">${this.escapeHtml(this.config.promo_badge || '推广支持')}</div><div class="promo-preview-main"><div class="promo-preview-title">${this.escapeHtml(this.config.promo_title || '推广支持')}</div><div class="promo-preview-desc">${this.renderRichContent(this.config.promo_desc || '', this.config.promo_format)}</div></div></div></div>`
+      : '';
 
-        return `<!DOCTYPE html><html lang="zh-CN"><head>${this.render_Head(this.config.title)}<style>
+    // （下面后台 HTML/CSS/JS 与你原版保持，仅修 openLog 解码）
+    return `<!DOCTYPE html><html lang="zh-CN"><head>${this.render_Head(this.config.title)}<style>
         :root{
           --bg-card:rgba(15,23,42,0.70);
           --bg-card-soft:rgba(15,23,42,0.58);
@@ -2017,11 +2131,11 @@ class NooMiNav {
               <div>
                 <h1 class="hero-title">📊 数据看板</h1>
                 <div class="hero-sub">
-                  当前查看维度：<strong style="color:var(--txt)">${m}</strong>。你可以在这里查看精选资源与友链的点击情况、快速预览公告与推广卡内容，并直接进入系统配置面板修改站点设置。
+                  当前查看维度：<strong style="color:var(--txt)">${this.escapeHtml(m)}</strong>。你可以在这里查看精选资源与友链的点击情况、快速预览公告与推广卡内容，并直接进入系统配置面板修改站点设置。
                 </div>
                 <div class="hero-tags">
-                  <span class="pill">🧭 路径：${this.ADMIN_PATH}</span>
-                  <span class="pill">🕒 时间：${this.time.fullStr}</span>
+                  <span class="pill">🧭 路径：${this.escapeHtml(this.ADMIN_PATH)}</span>
+                  <span class="pill">🕒 时间：${this.escapeHtml(this.time.fullStr)}</span>
                   <span class="pill">📦 历史总计：${historyTotal}</span>
                 </div>
               </div>
@@ -2055,8 +2169,8 @@ class NooMiNav {
                 <a href="${this.ADMIN_PATH}?m=${prevDay}" class="tbtn">◀ 上一项</a>
                 <div class="date-chip" title="点击切换日期">
                   <span>📅</span>
-                  <strong>${m}</strong>
-                  <input type="date" value="${isDayMode ? m : ''}" onchange="if(this.value) location.href='${this.ADMIN_PATH}?m='+this.value">
+                  <strong>${this.escapeHtml(m)}</strong>
+                  <input type="date" value="${isDayMode ? this.escapeAttr(m) : ''}" onchange="if(this.value) location.href='${this.ADMIN_PATH}?m='+this.value">
                 </div>
                 <a href="${this.ADMIN_PATH}?m=${nextDay}" class="tbtn">下一项 ▶</a>
                 <a href="${this.ADMIN_PATH}?m=${nextMonthStr}" class="tbtn" title="下个月">下月 ⏩</a>
@@ -2290,7 +2404,11 @@ class NooMiNav {
 
               dr.classList.add('open');
               mask.classList.add('show');
-              document.getElementById('dt').innerText = n + ' · 点击记录';
+
+              // ✅ 修复：decodeURIComponent
+              const safeName = decodeURIComponent(n || '');
+              document.getElementById('dt').innerText = safeName + ' · 点击记录';
+
               l.innerHTML = '<li style="padding:20px;text-align:center;color:var(--txt-sub)">加载中...</li>';
 
               try {
@@ -2440,5 +2558,5 @@ class NooMiNav {
             });
           </script>
         </body></html>`;
-    }
+  }
 }
