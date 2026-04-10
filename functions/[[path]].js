@@ -932,7 +932,7 @@ class NooMiNav {
       .account-card {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 18px;
   margin-bottom: 16px;
   padding: 14px 18px;
   background: linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(59,130,246,0.10) 100%);
@@ -944,15 +944,19 @@ class NooMiNav {
 }
 .account-card-badge {
   flex-shrink: 0;
-  min-width: 108px;
-  padding: 8px 12px;
+  min-width: 138px;
+  padding: 12px 16px;
   border-radius: 999px;
   text-align: center;
-  font-size: 0.82rem;
+  font-size: 0.95rem;
   font-weight: 800;
-  color: #ecfdf5;
-  background: linear-gradient(135deg, rgba(16,185,129,0.34), rgba(59,130,246,0.18));
-  border: 1px solid rgba(167,243,208,0.26);
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #d1fae5;
+  background: linear-gradient(135deg, rgba(16,185,129,.28), rgba(59,130,246,.18));
+  border: 1px solid rgba(167,243,208,.24);
 }
 .account-card-main {
   flex: 1;
