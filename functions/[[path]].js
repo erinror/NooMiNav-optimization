@@ -52,90 +52,89 @@ class NooMiNav {
   // [模块 1] 初始化配置加载
   // ------------------------------------------------------------------------
   async initConfig() {
-    this.dbSettings = {};
-    if (this.env.db) {
-      try {
-        // ✅ 修复：统一初始化表，避免 no such table
-        await this.env.db.prepare("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)").run();
-        await this.env.db.prepare(`
-          CREATE TABLE IF NOT EXISTS logs (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            link_id TEXT,
-            click_time TEXT,
-            month_key TEXT,
-            ip_address TEXT,
-            user_agent TEXT
-          )
-        `).run();
-        await this.env.db.prepare(`
-          CREATE TABLE IF NOT EXISTS stats (
-            id TEXT PRIMARY KEY,
-            name TEXT,
-            type TEXT,
-            total_clicks INTEGER DEFAULT 0,
-            year_clicks INTEGER DEFAULT 0,
-            month_clicks INTEGER DEFAULT 0,
-            day_clicks INTEGER DEFAULT 0,
-            last_year TEXT,
-            last_month TEXT,
-            last_day TEXT,
-            last_time TEXT
-          )
-        `).run();
+  this.dbSettings = {};
+  if (this.env.db) {
+    try {
+      await this.env.db.prepare("CREATE TABLE IF NOT EXISTS settings (key TEXT PRIMARY KEY, value TEXT)").run();
+      await this.env.db.prepare(`
+        CREATE TABLE IF NOT EXISTS logs (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          link_id TEXT,
+          click_time TEXT,
+          month_key TEXT,
+          ip_address TEXT,
+          user_agent TEXT
+        )
+      `).run();
+      await this.env.db.prepare(`
+        CREATE TABLE IF NOT EXISTS stats (
+          id TEXT PRIMARY KEY,
+          name TEXT,
+          type TEXT,
+          total_clicks INTEGER DEFAULT 0,
+          year_clicks INTEGER DEFAULT 0,
+          month_clicks INTEGER DEFAULT 0,
+          day_clicks INTEGER DEFAULT 0,
+          last_year TEXT,
+          last_month TEXT,
+          last_day TEXT,
+          last_time TEXT
+        )
+      `).run();
 
-        const res = await this.env.db.prepare("SELECT * FROM settings").all();
-        (res.results || []).forEach(r => this.dbSettings[r.key] = r.value);
-      } catch (e) {
-        console.error("initConfig DB error:", e);
-      }
+      const res = await this.env.db.prepare("SELECT * FROM settings").all();
+      (res.results || []).forEach(r => this.dbSettings[r.key] = r.value);
+    } catch (e) {
+      console.error("initConfig DB error:", e);
     }
+  }
 
-    this.ADMIN_PATH = '/' + (this.env.admin || 'admin').replace(/^\//, '');
+  this.ADMIN_PATH = '/' + (this.env.admin || 'admin').replace(/^\//, '');
 
-    this.config = {
-      admin_pass: this.dbSettings.admin_pass || "123456",
-      title: this.dbSettings.title || this.env.TITLE || "云端加速 · 精选导航",
-      subtitle: this.dbSettings.subtitle || this.env.SUBTITLE || "优质资源推荐 · 随时畅联",
-      contact_url: this.dbSettings.contact_url || this.env.CONTACT_URL || "",
-      mail: this.dbSettings.mail !== undefined ? this.dbSettings.mail : (this.env.mail || ""),
-      push: this.dbSettings.push !== undefined ? this.dbSettings.push : (this.env.push || ""),
-      host: (this.dbSettings.host || this.env.host || this.url.origin).replace(/\/$/, ''),
-      notice: this.dbSettings.notice !== undefined
-        ? this.dbSettings.notice
-        : (this.env.notice || "<div style=\"margin-bottom:8px\">🎉 欢迎使用 FlarePortal 极简导航！</div><div class=\"notice-sub\">您可以在后台「系统设置」中修改此处的公告内容，支持 HTML 标签。如果清空内容，公告板将自动隐藏。</div>"),
+  this.config = {
+    admin_pass: this.dbSettings.admin_pass || "123456",
+    title: this.dbSettings.title || this.env.TITLE || "云端加速 · 精选导航",
+    subtitle: this.dbSettings.subtitle || this.env.SUBTITLE || "优质资源推荐 · 随时畅联",
+    contact_url: this.dbSettings.contact_url || this.env.CONTACT_URL || "",
+    mail: this.dbSettings.mail !== undefined ? this.dbSettings.mail : (this.env.mail || ""),
+    push: this.dbSettings.push !== undefined ? this.dbSettings.push : (this.env.push || ""),
+    host: (this.dbSettings.host || this.env.host || this.url.origin).replace(/\/$/, ''),
+    notice: this.dbSettings.notice !== undefined
+      ? this.dbSettings.notice
+      : (this.env.notice || "<div style=\"margin-bottom:8px\">🎉 欢迎使用 FlarePortal 极简导航！</div><div class=\"notice-sub\">您可以在后台「系统设置」中修改此处的公告内容，支持 HTML 标签。如果清空内容，公告板将自动隐藏。</div>"),
 
-      promo_enable: this.dbSettings.promo_enable !== undefined ? this.dbSettings.promo_enable : (this.env.promo_enable || "1"),
-      promo_badge: this.dbSettings.promo_badge !== undefined ? this.dbSettings.promo_badge : (this.env.promo_badge || "免费域名可托管 CF"),
-      promo_title: this.dbSettings.promo_title !== undefined ? this.dbSettings.promo_title : (this.env.promo_title || "本站域名服务由 DigitalPlat FreeDomain 提供支持"),
-      promo_desc: this.dbSettings.promo_desc !== undefined ? this.dbSettings.promo_desc : (this.env.promo_desc || "可免费申请域名，支持 Cloudflare 托管接入，适合导航站与个人项目使用。"),
-      promo_url: this.dbSettings.promo_url !== undefined ? this.dbSettings.promo_url : (this.env.promo_url || "https://dash.domain.digitalplat.org/signup?ref=s8ywnMQRkL"),
-      promo_format: this.dbSettings.promo_format !== undefined ? this.dbSettings.promo_format : (this.env.promo_format || "markdown"),
-      account_enable: this.dbSettings.account_enable !== undefined ? this.dbSettings.account_enable : (this.env.account_enable || "0"),
-      account_badge: this.dbSettings.account_badge !== undefined ? this.dbSettings.account_badge : (this.env.account_badge || "账号购买"),
-      account_title: this.dbSettings.account_title !== undefined ? this.dbSettings.account_title : (this.env.account_title || "账号购买通道"),
-      account_desc: this.dbSettings.account_desc !== undefined ? this.dbSettings.account_desc : (this.env.account_desc || "稳定 / 快速 / 自动发货"),
-      account_url: this.dbSettings.account_url !== undefined ? this.dbSettings.account_url : (this.env.account_url || "")
-    };
+    promo_enable: this.dbSettings.promo_enable !== undefined ? this.dbSettings.promo_enable : (this.env.promo_enable || "1"),
+    promo_badge: this.dbSettings.promo_badge !== undefined ? this.dbSettings.promo_badge : (this.env.promo_badge || "免费域名可托管 CF"),
+    promo_title: this.dbSettings.promo_title !== undefined ? this.dbSettings.promo_title : (this.env.promo_title || "本站域名服务由 DigitalPlat FreeDomain 提供支持"),
+    promo_desc: this.dbSettings.promo_desc !== undefined ? this.dbSettings.promo_desc : (this.env.promo_desc || "可免费申请域名，支持 Cloudflare 托管接入，适合导航站与个人项目使用。"),
+    promo_url: this.dbSettings.promo_url !== undefined ? this.dbSettings.promo_url : (this.env.promo_url || "https://dash.domain.digitalplat.org/signup?ref=s8ywnMQRkL"),
+    promo_format: this.dbSettings.promo_format !== undefined ? this.dbSettings.promo_format : (this.env.promo_format || "markdown"),
 
-    if (this.config.push && !this.config.push.endsWith('/contact')) {
-      this.config.push = this.config.push.replace(/\/$/, '') + '/contact';
-    }
+    // ✅ 新版右侧账号广告：直接支持 HTML / Markdown
+    account_enable: this.dbSettings.account_enable !== undefined ? this.dbSettings.account_enable : (this.env.account_enable || "0"),
+    account_format: this.dbSettings.account_format !== undefined ? this.dbSettings.account_format : (this.env.account_format || "markdown"),
+    account_content: this.dbSettings.account_content !== undefined ? this.dbSettings.account_content : (this.env.account_content || "")
+  };
 
-    this.config.img = this.DEFAULT_IMG;
-    const imgSource = this.dbSettings.img || this.env.img;
-    if (imgSource) {
-      const imgStr = imgSource.trim();
-      if (imgStr.startsWith('data:')) {
-        this.config.img = imgStr;
-      } else {
-        const list = imgStr.split(',').map(s => s.trim()).filter(s => s);
-        if (list.length > 0) {
-          const dayIndex = Math.floor((this.time.now.getTime()) / 86400000);
-          this.config.img = list[dayIndex % list.length];
-        }
+  if (this.config.push && !this.config.push.endsWith('/contact')) {
+    this.config.push = this.config.push.replace(/\/$/, '') + '/contact';
+  }
+
+  this.config.img = this.DEFAULT_IMG;
+  const imgSource = this.dbSettings.img || this.env.img;
+  if (imgSource) {
+    const imgStr = imgSource.trim();
+    if (imgStr.startsWith('data:')) {
+      this.config.img = imgStr;
+    } else {
+      const list = imgStr.split(',').map(s => s.trim()).filter(s => s);
+      if (list.length > 0) {
+        const dayIndex = Math.floor((this.time.now.getTime()) / 86400000);
+        this.config.img = list[dayIndex % list.length];
       }
     }
   }
+}
 
   // ✅ 新增：JSON 安全解析
   parseJsonArraySafe(raw, fallback = []) {
@@ -356,26 +355,39 @@ class NooMiNav {
   }
 
   async api_SaveSettings() {
-    if (this.request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
-    if (!this.isAuthed()) return new Response('Unauthorized', { status: 401 });
+  if (this.request.method !== 'POST') return new Response('Method not allowed', { status: 405 });
+  if (!this.isAuthed()) return new Response('Unauthorized', { status: 401 });
+  if (!this.env.db) return new Response('Database not available', { status: 500 });
 
-    try {
-      const body = await this.request.json();
-      const allowed = new Set([
-        "admin_pass", "title", "subtitle", "img", "contact_url", "mail", "push", "host", "notice",
-        "promo_enable", "promo_badge", "promo_title", "promo_desc", "promo_url", "promo_format",
-        "account_enable", "account_badge", "account_title", "account_desc", "account_url",
-         "links", "friends"
-      ]);
-      const stmts = Object.keys(body)
-        .filter(k => allowed.has(k))
-        .map(k => this.env.db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").bind(k, String(body[k])));
+  try {
+    const body = await this.request.json();
+
+    const allowed = new Set([
+      "admin_pass", "title", "subtitle", "img", "contact_url", "mail", "push", "host", "notice",
+      "promo_enable", "promo_badge", "promo_title", "promo_desc", "promo_url", "promo_format",
+
+      // ✅ 新版右侧账号广告
+      "account_enable", "account_format", "account_content",
+
+      "links", "friends"
+    ]);
+
+    const stmts = Object.keys(body)
+      .filter(k => allowed.has(k))
+      .map(k => this.env.db.prepare("INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)").bind(k, String(body[k] ?? '')));
+
+    if (stmts.length > 0) {
       await this.env.db.batch(stmts);
-      return new Response('OK');
-    } catch (e) {
-      return new Response('Save failed', { status: 500 });
     }
+
+    return new Response('OK', {
+      headers: { "content-type": "text/plain;charset=UTF-8" }
+    });
+  } catch (e) {
+    console.error("api_SaveSettings error:", e);
+    return new Response('Save failed', { status: 500 });
   }
+}
 
   // ------------------------------------------------------------------------
   // [模块 4] 数据库
@@ -700,12 +712,10 @@ class NooMiNav {
   const promoTitle = this.config.promo_title || '推广支持';
   const promoDesc = this.config.promo_desc || '';
 
-  // 右侧广告（账号购买）
+  // ✅ 右侧广告：支持 HTML / Markdown
   const accountEnabled = String(this.config.account_enable || '0') === '1';
-  const accountUrl = this.config.account_url || '';
-  const accountBadge = this.config.account_badge || '账号购买';
-  const accountTitle = this.config.account_title || '账号购买通道';
-  const accountDesc = this.config.account_desc || '稳定 / 快速 / 自动发货';
+  const accountFormat = this.config.account_format || 'markdown';
+  const accountContent = (this.config.account_content || '').trim();
 
   const cardsHtml = safeLinks.map(item => {
     const itemId = this.escapeAttr(item.id || '');
@@ -728,7 +738,7 @@ class NooMiNav {
     noticeHtml = `<div class="glass-card notice-card"><div class="notice-title"><span class="heart-beat">❤️</span> 温馨提示</div><div class="notice-content">${this.config.notice}</div></div>`;
   }
 
-  // 页面中部推广卡（免费域名）
+  // 页面中部推广卡
   let promoHtml = '';
   if (promoEnabled && promoUrl) {
     const promoRendered = this.renderRichContent(promoDesc, this.config.promo_format);
@@ -746,17 +756,17 @@ class NooMiNav {
     `;
   }
 
-  // 右侧广告（账号购买）
-  const accountSideHtml = (accountEnabled && accountUrl) ? `
-    <aside id="accountSideAd" class="buy-side-ad">
-      <button class="buy-side-close" id="accountSideClose" aria-label="关闭">×</button>
-      <a href="${this.escapeAttr(accountUrl)}" target="_blank" rel="noopener noreferrer" class="buy-side-link">
-        <div class="buy-side-badge">${this.escapeHtml(accountBadge)}</div>
-        <div class="buy-side-title">${this.escapeHtml(accountTitle)}</div>
-        <div class="buy-side-desc">${this.escapeHtml(accountDesc)}</div>
-      </a>
-    </aside>
-  ` : '';
+  // ✅ 右侧账号广告：直接渲染内容
+  let accountSideHtml = '';
+  if (accountEnabled && accountContent) {
+    const accountRendered = this.renderRichContent(accountContent, accountFormat);
+    accountSideHtml = `
+      <aside id="accountSideAd" class="buy-side-ad">
+        <button class="buy-side-close" id="accountSideClose" aria-label="关闭">×</button>
+        <div class="buy-side-rich rich-content">${accountRendered}</div>
+      </aside>
+    `;
+  }
 
   return `<!DOCTYPE html><html lang="zh-CN"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${this.escapeHtml(this.config.title)}</title><style>
     :root {
@@ -933,33 +943,80 @@ class NooMiNav {
     .rich-content p { margin: 0 0 8px; }
     .rich-content p:last-child { margin-bottom: 0; }
 
+    /* ✅ 右侧账号广告：支持 HTML / Markdown */
     .buy-side-ad{
-  position:fixed; right:18px; top:50%; transform:translateY(-50%);
-  width:220px;              /* 原来 220，改大就是“更长” */
-  min-height:180px;         /* 想更高可以加这个 */
-  z-index:180;
-  background:rgba(15,23,42,.82);
-  border:1px solid rgba(255,255,255,.16);
-  border-radius:14px; padding:16px;
-  backdrop-filter:blur(6px);
-  box-shadow:0 12px 28px rgba(0,0,0,.25);
-}
-    .buy-side-link{ color:#fff; text-decoration:none; display:block; }
-    .buy-side-badge{
-      display:inline-block; font-size:.72rem; padding:2px 8px; border-radius:999px;
-      background:rgba(16,185,129,.2); border:1px solid rgba(16,185,129,.35);
-      margin-bottom:8px;
+      position:fixed; right:18px; top:50%; transform:translateY(-50%);
+      width:300px; max-height:calc(100vh - 120px); overflow:auto;
+      z-index:180;
+      background:rgba(15,23,42,.82);
+      border:1px solid rgba(255,255,255,.16);
+      border-radius:18px; padding:16px;
+      backdrop-filter:blur(8px);
+      box-shadow:0 12px 28px rgba(0,0,0,.25);
     }
-    .buy-side-title{ font-weight:800; margin-bottom:6px; line-height:1.35; }
-    .buy-side-desc{ font-size:.84rem; opacity:.88; }
     .buy-side-close{
-      position:absolute; right:8px; top:8px; width:24px; height:24px;
+      position:absolute; right:10px; top:10px; width:28px; height:28px;
       border:0; border-radius:999px; cursor:pointer;
-      background:rgba(255,255,255,.1); color:#fff;
+      background:rgba(255,255,255,.10); color:#fff; font-size:16px;
     }
+    .buy-side-rich{ padding-top:10px; }
+    .buy-side-rich h1,
+    .buy-side-rich h2,
+    .buy-side-rich h3{ margin:0 0 10px; line-height:1.35; }
+    .buy-side-rich h1{ font-size:1.15rem; }
+    .buy-side-rich h2{ font-size:1.08rem; }
+    .buy-side-rich h3{ font-size:1rem; }
+    .buy-side-rich p{
+      margin:0 0 10px;
+      font-size:.9rem;
+      line-height:1.75;
+      color:rgba(255,255,255,.92);
+    }
+    .buy-side-rich ul{ margin:0 0 12px 18px; padding:0; }
+    .buy-side-rich li{ margin:6px 0; font-size:.88rem; color:rgba(255,255,255,.9); }
+    .buy-side-rich code{
+      padding:2px 6px;
+      border-radius:8px;
+      background:rgba(255,255,255,.08);
+      border:1px solid rgba(255,255,255,.12);
+    }
+    .buy-side-rich a{
+      color:#93c5fd;
+      word-break:break-all;
+    }
+    .buy-side-rich .ad-badge{
+      display:inline-flex;
+      align-items:center;
+      padding:4px 10px;
+      margin-bottom:10px;
+      font-size:.72rem;
+      font-weight:800;
+      border-radius:999px;
+      background:rgba(16,185,129,.18);
+      border:1px solid rgba(16,185,129,.35);
+      color:#d1fae5;
+    }
+    .buy-side-rich .ad-btn{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      margin-top:10px;
+      padding:10px 14px;
+      border-radius:12px;
+      text-decoration:none;
+      color:#fff;
+      font-weight:800;
+      background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+      border:1px solid rgba(255,255,255,.12);
+      box-shadow:0 8px 18px rgba(59,130,246,.22);
+    }
+    .buy-side-rich .ad-btn:hover{ transform:translateY(-1px); }
 
     @media (max-width: 900px){
-      .buy-side-ad{ top:auto; bottom:90px; right:12px; transform:none; width:170px; }
+      .buy-side-ad{
+        top:auto; bottom:90px; right:12px; transform:none;
+        width:220px; max-height:50vh;
+      }
     }
     @media (max-width: 768px) {
       .header h1 { font-size: 2.2rem; }
@@ -1025,11 +1082,10 @@ class NooMiNav {
       }
     }
 
-    // 仅右侧账号广告（本次关闭）
     function initSideAccountAd() {
       const side = document.getElementById('accountSideAd');
       const sideClose = document.getElementById('accountSideClose');
-      const keySideSession = 'dismiss_account_side_session_v1';
+      const keySideSession = 'dismiss_account_side_session_v2';
 
       if (!side) return;
 
@@ -1197,33 +1253,31 @@ class NooMiNav {
   const friendHtml = safeFriends.map(i => buildCard(i.id, i.name, '', true)).join('');
 
   const sysSettings = {
-    admin_pass: this.config.admin_pass,
-    title: this.config.title,
-    subtitle: this.config.subtitle,
-    img: this.dbSettings.img || this.env.img || "",
-    contact_url: this.config.contact_url,
-    mail: this.config.mail,
-    push: this.dbSettings.push || this.env.push || "",
-    host: this.dbSettings.host || this.env.host || "",
-    notice: this.config.notice,
+  admin_pass: this.config.admin_pass,
+  title: this.config.title,
+  subtitle: this.config.subtitle,
+  img: this.dbSettings.img || this.env.img || "",
+  contact_url: this.config.contact_url,
+  mail: this.config.mail,
+  push: this.dbSettings.push || this.env.push || "",
+  host: this.dbSettings.host || this.env.host || "",
+  notice: this.config.notice,
 
-    promo_enable: this.config.promo_enable,
-    promo_badge: this.config.promo_badge,
-    promo_title: this.config.promo_title,
-    promo_desc: this.config.promo_desc,
-    promo_url: this.config.promo_url,
-    promo_format: this.config.promo_format,
+  promo_enable: this.config.promo_enable,
+  promo_badge: this.config.promo_badge,
+  promo_title: this.config.promo_title,
+  promo_desc: this.config.promo_desc,
+  promo_url: this.config.promo_url,
+  promo_format: this.config.promo_format,
 
-    // ✅ 新增：账号广告配置
-    account_enable: this.config.account_enable,
-    account_badge: this.config.account_badge,
-    account_title: this.config.account_title,
-    account_desc: this.config.account_desc,
-    account_url: this.config.account_url,
+  // ✅ 新版右侧账号广告
+  account_enable: this.config.account_enable,
+  account_format: this.config.account_format,
+  account_content: this.config.account_content,
 
-    links: JSON.stringify(this.LINKS_DATA, null, 2),
-    friends: JSON.stringify(this.FRIENDS_DATA, null, 2)
-  };
+  links: JSON.stringify(this.LINKS_DATA, null, 2),
+  friends: JSON.stringify(this.FRIENDS_DATA, null, 2)
+};
 
   let noticeHtmlPreview = '';
   if (this.config.notice && this.config.notice.trim() !== '') {
@@ -1234,8 +1288,14 @@ class NooMiNav {
     ? `<div class="panel notice-panel"><div class="panel-head"><span>📣</span><strong>推广卡预览（首页中部）</strong></div><div class="promo-preview-box"><div class="promo-preview-badge">${this.escapeHtml(this.config.promo_badge || '推广支持')}</div><div class="promo-preview-main"><div class="promo-preview-title">${this.escapeHtml(this.config.promo_title || '推广支持')}</div><div class="promo-preview-desc">${this.renderRichContent(this.config.promo_desc || '', this.config.promo_format)}</div></div></div></div>`
     : '';
 
-  const accountPreview = (String(this.config.account_enable || '0') === '1' && (this.config.account_url || '').trim())
-    ? `<div class="panel notice-panel"><div class="panel-head"><span>🧾</span><strong>右侧账号广告预览</strong></div><div class="account-preview-box"><div class="account-preview-badge">${this.escapeHtml(this.config.account_badge || '账号购买')}</div><div class="account-preview-main"><div class="account-preview-title">${this.escapeHtml(this.config.account_title || '账号购买通道')}</div><div class="account-preview-desc">${this.escapeHtml(this.config.account_desc || '稳定 / 快速 / 自动发货')}</div><div class="account-preview-url">${this.escapeHtml(this.config.account_url || '')}</div></div></div></div>`
+  const accountPreview =
+  (String(this.config.account_enable || '0') === '1' && String(this.config.account_content || '').trim())
+    ? `<div class="panel notice-panel">
+         <div class="panel-head"><span>🧾</span><strong>右侧账号广告预览</strong></div>
+         <div class="account-preview-box">
+           <div class="account-preview-rich">${this.renderRichContent(this.config.account_content || '', this.config.account_format || 'markdown')}</div>
+         </div>
+       </div>`
     : '';
 
   return `<!DOCTYPE html><html lang="zh-CN"><head>${this.render_Head(this.config.title)}<style>
@@ -1712,35 +1772,59 @@ class NooMiNav {
       }
       .promo-preview-desc a{ color:#93c5fd; }
 
-      /* ✅ 新增：账号广告预览 */
-      .account-preview-box{
-        display:flex;
-        gap:14px;
-        align-items:flex-start;
-        padding:14px;
-        border-radius:18px;
-        background:linear-gradient(135deg, rgba(16,185,129,.10), rgba(59,130,246,.08));
-        border:1px solid var(--bd);
-      }
-      .account-preview-badge{
-        min-width:120px;
-        padding:9px 12px;
-        border-radius:999px;
-        text-align:center;
-        background:rgba(16,185,129,.18);
-        border:1px solid rgba(16,185,129,.3);
-        color:#d1fae5;
-        font-weight:800;
-      }
-      .account-preview-main{ flex:1; min-width:0; }
-      .account-preview-title{ font-weight:900; margin-bottom:8px; }
-      .account-preview-desc{ color:var(--txt-soft); line-height:1.7; font-size:.92rem; margin-bottom:6px; }
-      .account-preview-url{
-        font-size:.8rem;
-        font-family:monospace;
-        color:#86efac;
-        word-break:break-all;
-      }
+      /* ✅ 新版：账号广告预览（支持 HTML / Markdown） */
+.account-preview-box{
+  padding:14px;
+  border-radius:18px;
+  background:linear-gradient(135deg, rgba(16,185,129,.10), rgba(59,130,246,.08));
+  border:1px solid var(--bd);
+}
+.account-preview-rich h1,
+.account-preview-rich h2,
+.account-preview-rich h3{ margin:0 0 10px; line-height:1.35; }
+.account-preview-rich h1{ font-size:1.15rem; }
+.account-preview-rich h2{ font-size:1.08rem; }
+.account-preview-rich h3{ font-size:1rem; }
+.account-preview-rich p{
+  margin:0 0 10px;
+  color:var(--txt-soft);
+  line-height:1.75;
+  font-size:.92rem;
+}
+.account-preview-rich ul{ margin:0 0 12px 18px; padding:0; }
+.account-preview-rich li{ margin:6px 0; color:var(--txt-soft); }
+.account-preview-rich code{
+  padding:2px 6px;
+  border-radius:8px;
+  background:rgba(255,255,255,.06);
+  border:1px solid var(--bd);
+}
+.account-preview-rich a{ color:#93c5fd; word-break:break-all; }
+.account-preview-rich .ad-badge{
+  display:inline-flex;
+  align-items:center;
+  padding:4px 10px;
+  margin-bottom:10px;
+  font-size:.72rem;
+  font-weight:800;
+  border-radius:999px;
+  background:rgba(16,185,129,.18);
+  border:1px solid rgba(16,185,129,.35);
+  color:#d1fae5;
+}
+.account-preview-rich .ad-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:10px;
+  padding:10px 14px;
+  border-radius:12px;
+  text-decoration:none;
+  color:#fff;
+  font-weight:800;
+  background:linear-gradient(135deg,#3b82f6,#8b5cf6);
+  border:1px solid rgba(255,255,255,.12);
+}
 
       .mask{
         position:fixed;
@@ -2204,40 +2288,46 @@ class NooMiNav {
                   </div>
                 </div>
 
-                <!-- ✅ 新增：账号广告配置 -->
-                <div class="field full">
-                  <label>右侧账号广告开关 / 配置</label>
-                  <div class="switch-row" style="margin-bottom:12px;">
-                    <label class="switch">
-                      <input type="checkbox" id="s_account_enable">
-                      <span class="slider"></span>
-                    </label>
-                    <span style="color:var(--txt-sub);font-weight:700;">启用首页右侧账号广告位</span>
-                  </div>
-                  <div class="settings-grid">
-                    <div class="field">
-                      <label>广告徽标</label>
-                      <input type="text" id="s_account_badge" placeholder="如：账号购买">
-                    </div>
-                    <div class="field">
-                      <label>广告标题</label>
-                      <input type="text" id="s_account_title" placeholder="如：ChatGPT / AI 账号购买">
-                    </div>
-                    <div class="field full">
-                      <label>广告描述</label>
-                      <textarea id="s_account_desc" style="min-height:100px" placeholder="如：稳定 / 快速 / 自动发货"></textarea>
-                    </div>
-                    <div class="field full">
-                      <label>广告跳转链接</label>
-                      <input type="text" id="s_account_url" placeholder="https://...">
-                    </div>
-                  </div>
-                </div>
+                <!-- ✅ 新版：账号广告配置 -->
+<div class="field full">
+  <label>右侧账号广告开关 / 配置</label>
+  <div class="switch-row" style="margin-bottom:12px;">
+    <label class="switch">
+      <input type="checkbox" id="s_account_enable">
+      <span class="slider"></span>
+    </label>
+    <span style="color:var(--txt-sub);font-weight:700;">启用首页右侧账号广告位</span>
+  </div>
 
-                <div class="field full">
-                  <label>自定义卡片跳转域名</label>
-                  <input type="text" id="s_host" placeholder="如果不填，默认自动使用当前访问域名">
-                </div>
+  <div class="settings-grid">
+    <div class="field">
+      <label>内容格式</label>
+      <select id="s_account_format">
+        <option value="markdown">Markdown</option>
+        <option value="html">HTML</option>
+      </select>
+    </div>
+
+    <div class="field">
+      <label>快捷填充</label>
+      <div class="field-tools" style="margin-bottom:0;">
+        <button class="mini-btn" type="button" onclick="fillAccountMarkdownExample()">填入 Markdown 示例</button>
+        <button class="mini-btn" type="button" onclick="fillAccountHtmlExample()">填入 HTML 示例</button>
+      </div>
+      <small>推荐优先使用 Markdown。想做按钮、徽标、自定义结构时用 HTML。</small>
+    </div>
+  </div>
+
+  <div style="margin-top:16px;">
+    <label style="display:block;margin-bottom:10px;font-size:.88rem;color:var(--txt-sub);font-weight:800;">广告内容</label>
+    <textarea id="s_account_content" class="code" style="min-height:220px" placeholder="可直接粘贴 Markdown 或 HTML 片段"></textarea>
+    <small>内容会直接渲染到首页右侧广告位。HTML 模式下请只粘贴你自己信任的代码，不要放 script。</small>
+  </div>
+</div>
+<div class="field full">
+  <label>自定义卡片跳转域名</label>
+  <input type="text" id="s_host" placeholder="如果不填，默认自动使用当前访问域名">
+</div>
 
                 <div class="field full">
                   <label>💎 精选资源 LINKS（JSON 格式）</label>
@@ -2299,6 +2389,28 @@ class NooMiNav {
               url: "https://example.org"
             }
           ];
+         
+          const ACCOUNT_MD_EXAMPLE = `### 🔐 账号购买
+
+Google 账号 / Apple 外区 ID / Telegram / Instagram / X
+
+- 多种类型可选
+- 快速处理
+- 自动发货
+- 下单前请先查看商品说明
+
+[👉 立即进入购买通道](https://tgsss.com/9EB6941B)`;
+
+const ACCOUNT_HTML_EXAMPLE = `<div class="ad-badge">账号购买</div>
+<h3>Google / Apple 外区 ID / Telegram / Instagram / X</h3>
+<p>多种账号可选，快速处理，支持自动发货。</p>
+<ul>
+  <li>Google 账号</li>
+  <li>Apple 外区 ID</li>
+  <li>Telegram / Instagram / X</li>
+</ul>
+<a class="ad-btn" href="https://tgsss.com/9EB6941B" target="_blank" rel="noopener noreferrer">👉 立即进入购买通道</a>
+<p style="margin-top:8px;opacity:.78;font-size:12px;">下单前建议先查看商品说明，按需求选择版本。</p>`;
 
           function initAdminTheme() {
             const btn = document.querySelector('.theme-toggle');
@@ -2386,10 +2498,8 @@ class NooMiNav {
 
             // ✅ 新增：账号广告回填
             document.getElementById('s_account_enable').checked = String(SYS_SET.account_enable || '0') === '1';
-            document.getElementById('s_account_badge').value = SYS_SET.account_badge || '';
-            document.getElementById('s_account_title').value = SYS_SET.account_title || '';
-            document.getElementById('s_account_desc').value = SYS_SET.account_desc || '';
-            document.getElementById('s_account_url').value = SYS_SET.account_url || '';
+            document.getElementById('s_account_format').value = SYS_SET.account_format || 'markdown';
+            document.getElementById('s_account_content').value = SYS_SET.account_content || '';
 
             document.getElementById('s_links').value = SYS_SET.links || '[]';
             document.getElementById('s_friends').value = SYS_SET.friends || '[]';
@@ -2417,10 +2527,24 @@ class NooMiNav {
           }
 
           function fillFriendsExample(){
-            const el = document.getElementById('s_friends');
-            if(el.value.trim() && !confirm('当前 FRIENDS 内容不为空，确定要用示例模板覆盖吗？')) return;
-            el.value = JSON.stringify(FRIENDS_EXAMPLE, null, 2);
-          }
+  const el = document.getElementById('s_friends');
+  if(el.value.trim() && !confirm('当前 FRIENDS 内容不为空，确定要用示例模板覆盖吗？')) return;
+  el.value = JSON.stringify(FRIENDS_EXAMPLE, null, 2);
+}
+
+          function fillAccountMarkdownExample(){
+  const el = document.getElementById('s_account_content');
+  if(el.value.trim() && !confirm('当前账号广告内容不为空，确定要用 Markdown 示例覆盖吗？')) return;
+  document.getElementById('s_account_format').value = 'markdown';
+  el.value = ACCOUNT_MD_EXAMPLE;
+}
+
+function fillAccountHtmlExample(){
+  const el = document.getElementById('s_account_content');
+  if(el.value.trim() && !confirm('当前账号广告内容不为空，确定要用 HTML 示例覆盖吗？')) return;
+  document.getElementById('s_account_format').value = 'html';
+  el.value = ACCOUNT_HTML_EXAMPLE;
+}
 
           async function saveSettings(btn) {
             try {
@@ -2449,12 +2573,9 @@ class NooMiNav {
               promo_url: document.getElementById('s_promo_url').value,
               promo_format: document.getElementById('s_promo_format').value,
 
-              // ✅ 新增：账号广告保存
               account_enable: document.getElementById('s_account_enable').checked ? '1' : '0',
-              account_badge: document.getElementById('s_account_badge').value,
-              account_title: document.getElementById('s_account_title').value,
-              account_desc: document.getElementById('s_account_desc').value,
-              account_url: document.getElementById('s_account_url').value,
+              account_format: document.getElementById('s_account_format').value,
+              account_content: document.getElementById('s_account_content').value,
 
               links: document.getElementById('s_links').value,
               friends: document.getElementById('s_friends').value
@@ -2465,16 +2586,18 @@ class NooMiNav {
             btn.disabled = true;
 
             try {
-              const res = await fetch(\`\${ADMIN_PATH}/api/settings\`, {
-                method: 'POST',
-                body: JSON.stringify(data)
-              });
-              if(res.ok) {
-                alert('✅ 配置已保存并生效！');
-                location.reload();
-              } else {
-                alert('❌ 保存失败');
-              }
+              const res = await fetch(`${ADMIN_PATH}/api/settings`, {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify(data)
+});
+              if (res.ok) {
+  alert('✅ 配置已保存并生效！');
+  location.reload();
+} else {
+  const text = await res.text();
+  alert('❌ 保存失败：' + text);
+}
             } catch(e) {
               alert('❌ 网络错误');
             }
