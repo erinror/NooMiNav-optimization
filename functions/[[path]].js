@@ -740,17 +740,19 @@ class NooMiNav {
 
     // ✅ 中间账号卡片：放在域名卡片上面
     let accountCardHtml = '';
-    if (accountEnabled && accountContent) {
-      const accountRendered = this.renderRichContent(accountContent, accountFormat);
-      accountCardHtml = `
-        <section class="glass-card account-card">
-          <div class="account-card-badge">账号服务</div>
-          <div class="account-card-main">
-            <div class="account-card-rich rich-content">${accountRendered}</div>
-          </div>
-        </section>
-      `;
-    }
+if (accountEnabled && accountContent) {
+  let accountRendered = this.renderRichContent(accountContent, accountFormat);
+  accountRendered = accountRendered.replace(/<div class="ad-badge">[\s\S]*?<\/div>/i, '');
+
+  accountCardHtml = `
+    <section class="glass-card promo-card account-promo-card">
+      <div class="promo-badge">账号购买</div>
+      <div class="promo-content">
+        <div class="promo-desc rich-content">${accountRendered}</div>
+      </div>
+    </section>
+  `;
+}
 
     // 页面中部推广卡（域名）
     let promoHtml = '';
@@ -929,98 +931,51 @@ class NooMiNav {
       .notice-content { font-size: 0.95rem; line-height: 1.8; color: rgba(255, 255, 255, 0.92); }
 
       /* ✅ 中间账号卡片 */
-      .account-card {
-  display: flex;
-  align-items: center;
-  gap: 18px;
-  margin-bottom: 16px;
-  padding: 14px 18px;
-  background: linear-gradient(135deg, rgba(16,185,129,0.14) 0%, rgba(59,130,246,0.10) 100%);
-  border: 1px solid rgba(110,231,183,0.22);
+      .account-promo-card{
+  margin-bottom:18px;
+  background:linear-gradient(135deg, rgba(255,255,255,0.16) 0%, rgba(16,185,129,0.10) 100%);
+  border:1px solid rgba(125, 211, 252, 0.22);
 }
-.account-card:hover {
-  transform: translateY(-2px);
-  box-shadow: var(--shadow-hover);
+.account-promo-card .promo-badge{
+  color:#d1fae5;
+  background:linear-gradient(135deg, rgba(16,185,129,0.28), rgba(59,130,246,0.18));
+  border:1px solid rgba(167,243,208,0.24);
 }
-.account-card-badge {
-  flex-shrink: 0;
-  min-width: 138px;
-  padding: 12px 16px;
-  border-radius: 999px;
-  text-align: center;
-  font-size: 0.95rem;
-  font-weight: 800;
-  line-height: 1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: #d1fae5;
-  background: linear-gradient(135deg, rgba(16,185,129,.28), rgba(59,130,246,.18));
-  border: 1px solid rgba(167,243,208,.24);
+.account-promo-card .promo-desc{
+  font-size:0.95rem;
+  color:rgba(226,232,240,0.92);
+  line-height:1.6;
 }
-.account-card-main {
-  flex: 1;
-  min-width: 0;
+.account-promo-card .promo-desc h1,
+.account-promo-card .promo-desc h2,
+.account-promo-card .promo-desc h3{
+  margin:0 0 8px;
+  line-height:1.35;
+  color:#fff;
 }
-.account-card-rich h1,
-.account-card-rich h2,
-.account-card-rich h3 {
-  margin: 0 0 6px;
-  line-height: 1.25;
-  color: #fff;
+.account-promo-card .promo-desc p{ margin:0 0 8px; }
+.account-promo-card .promo-desc p:last-child{ margin-bottom:0; }
+.account-promo-card .promo-desc ul{ margin:4px 0 0 18px; padding:0; }
+.account-promo-card .promo-desc li{ margin:4px 0; }
+.account-promo-card .promo-desc code{
+  padding:2px 6px;
+  border-radius:8px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.12);
 }
-.account-card-rich h1 { font-size: 1rem; }
-.account-card-rich h2 { font-size: 0.96rem; }
-.account-card-rich h3 { font-size: 0.92rem; }
-.account-card-rich p {
-  margin: 0 0 5px;
-  font-size: 0.86rem;
-  color: rgba(226, 232, 240, 0.92);
-  line-height: 1.5;
-}
-.account-card-rich p:last-child { margin-bottom: 0; }
-.account-card-rich ul { margin: 0 0 6px 18px; padding: 0; }
-.account-card-rich li {
-  margin: 3px 0;
-  font-size: 0.84rem;
-  color: rgba(226,232,240,0.92);
-}
-.account-card-rich code {
-  padding: 1px 5px;
-  border-radius: 6px;
-  background: rgba(255,255,255,.08);
-  border: 1px solid rgba(255,255,255,.12);
-}
-.account-card-rich a {
-  color: #93c5fd;
-  word-break: break-all;
-}
-.account-card-rich .ad-badge {
-  display: inline-flex;
-  align-items: center;
-  padding: 3px 8px;
-  margin-bottom: 6px;
-  font-size: .66rem;
-  font-weight: 800;
-  border-radius: 999px;
-  background: rgba(16,185,129,.18);
-  border: 1px solid rgba(16,185,129,.35);
-  color: #d1fae5;
-}
-.account-card-rich .ad-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 6px;
-  padding: 7px 11px;
-  border-radius: 10px;
-  text-decoration: none;
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.82rem;
-  background: linear-gradient(135deg,#3b82f6,#8b5cf6);
-  border: 1px solid rgba(255,255,255,.12);
-  box-shadow: 0 6px 14px rgba(59,130,246,.18);
+.account-promo-card .promo-desc a{ color:#93c5fd; }
+.account-promo-card .promo-desc .ad-badge{ display:none !important; }
+.account-promo-card .promo-desc .ad-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  margin-top:8px;
+  padding:9px 12px;
+  border-radius:10px;
+  text-decoration:none;
+  color:#fff;
+  font-weight:800;
+  background:linear-gradient(135deg,#3b82f6,#8b5cf6);
 }
 
       .promo-card {
@@ -1049,19 +1004,18 @@ class NooMiNav {
         .fab-btn { padding: 10px 14px; font-size: 0.85rem; }
         .notice-card { padding: 16px 18px; }
         .promo-card,
-        .account-card {
-          flex-direction: column;
-          align-items: flex-start;
-          gap: 14px;
-          padding: 18px;
-        }
-        .promo-badge,
-        .account-card-badge {
-          min-width: auto;
-          width: auto;
-          max-width: 100%;
-          font-size: 0.9rem;
-        }
+        .promo-card {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  padding: 18px;
+}
+.promo-badge {
+  min-width: auto;
+  width: auto;
+  max-width: 100%;
+  font-size: 0.9rem;
+}
       }
     </style>
     <script>
