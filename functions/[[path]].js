@@ -703,7 +703,7 @@ class NooMiNav {
 
     render_HomePage() {
 
-      render_AdminDashboard(dbData, m) {
+        render_AdminDashboard(dbData, m) {
     const { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode } = dbData;
     const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
     const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
@@ -2172,5 +2172,5 @@ class NooMiNav {
           });
         </script>
       </body></html>`;
-  }  
+  }
 }
