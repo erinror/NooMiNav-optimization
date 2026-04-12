@@ -702,6 +702,8 @@ class NooMiNav {
   }
 
     render_HomePage() {
+      `;
+  }
 
           render_AdminDashboard(dbData, m) {
     const { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode } = dbData;
