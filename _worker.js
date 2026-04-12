@@ -684,22 +684,33 @@ class NooMiNav {
     }
 
     let accountCardHtml = "";
-    if (accountEnabled && accountContent) {
-      let accountRendered = this.renderRichContent(accountContent, accountFormat);
-      accountRendered = accountRendered.replace(/<div class="ad-badge">[\s\S]*?<\/div>/i, "");
+if (accountEnabled && accountContent) {
+  let accountUrl = "";
+  const mdMatch = accountContent.match(/\[.*?\]\((https?:\/\/[^\s)]+)\)/i);
+  const htmlMatch = accountContent.match(/href=["'](https?:\/\/[^"']+)["']/i);
+  if (mdMatch?.[1]) accountUrl = mdMatch[1];
+  if (!accountUrl && htmlMatch?.[1]) accountUrl = htmlMatch[1];
 
-      let accountUrl = "";
-      const mdMatch = accountContent.match(/\[.*?\]\((https?:\/\/[^\s)]+)\)/i);
-      const htmlMatch = accountContent.match(/href=["'](https?:\/\/[^"']+)["']/i);
-      if (mdMatch?.[1]) accountUrl = mdMatch[1];
-      if (!accountUrl && htmlMatch?.[1]) accountUrl = htmlMatch[1];
+  let plainText = accountContent
+    .replace(/\[([^\]]+)\]\((https?:\/\/[^\s)]+)\)/gi, "$1")
+    .replace(/<a[^>]*>(.*?)<\/a>/gi, "$1")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\r/g, "")
+    .split("\n")
+    .map(s => s.trim())
+    .filter(Boolean)
+    .join(" · ")
+    .replace(/\s{2,}/g, " ")
+    .trim();
 
-      const badgeHtml = `<div class="promo-badge">账号购买</div>`;
-      const contentHtml = `<div class="promo-content"><div class="promo-desc rich-content">${accountRendered}</div></div>`;
+  if (!plainText) plainText = "多种类型可选 · 快速处理 · 自动发货";
 
-      accountCardHtml = accountUrl
-        ? `<a href="${this.escapeAttr(accountUrl)}" target="_blank" rel="noopener noreferrer" class="glass-card promo-card account-promo-card">${badgeHtml}${contentHtml}</a>`
-        : `<section class="glass-card promo-card account-promo-card">${badgeHtml}${contentHtml}</section>`;
+  const badgeHtml = `<div class="promo-badge">账号购买</div>`;
+  const contentHtml = `<div class="promo-content"><div class="promo-title">Google / Apple 外区 ID / Telegram / Instagram / X</div><div class="promo-desc">${this.escapeHtml(plainText)}</div></div>`;
+
+  accountCardHtml = accountUrl
+    ? `<a href="${this.escapeAttr(accountUrl)}" target="_blank" rel="noopener noreferrer" class="glass-card promo-card account-promo-card">${badgeHtml}${contentHtml}</a>`
+    : `<section class="glass-card promo-card account-promo-card">${badgeHtml}${contentHtml}</section>`;
     }
 
     let promoHtml = "";
@@ -756,14 +767,11 @@ class NooMiNav {
       .rich-content p{margin:0 0 8px}.rich-content p:last-child{margin-bottom:0}
       .account-promo-card{margin-bottom:18px;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(16,185,129,.10));border:1px solid rgba(125,211,252,.22);text-decoration:none;color:var(--text-main)}
       .account-promo-card .promo-badge{color:#d1fae5;background:linear-gradient(135deg,rgba(16,185,129,.28),rgba(59,130,246,.18));border:1px solid rgba(167,243,208,.24)}
-      .account-promo-card .promo-content{flex:1;min-width:0}
-      .account-promo-card .promo-desc h1,.account-promo-card .promo-desc h2,.account-promo-card .promo-desc h3{margin:0 0 8px;line-height:1.35;color:#fff}
-      .account-promo-card .promo-desc ul{margin:4px 0 0 18px;padding:0}.account-promo-card .promo-desc li{margin:4px 0}
-      .account-promo-card .promo-desc code{padding:2px 6px;border-radius:8px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12)}
-      .account-promo-card .promo-desc a{color:#93c5fd}
-      .account-promo-card .promo-desc .ad-badge{display:none!important}
-      .account-promo-card .promo-desc .ad-btn{display:inline-flex;align-items:center;justify-content:center;margin-top:8px;padding:9px 12px;border-radius:10px;text-decoration:none;color:#fff;font-weight:800;background:linear-gradient(135deg,#3b82f6,#8b5cf6);border:1px solid rgba(255,255,255,.12)}
-      @media (max-width:768px){
+      .account-promo-card{margin-bottom:18px;background:linear-gradient(135deg,rgba(255,255,255,.16),rgba(16,185,129,.10));border:1px solid rgba(125,211,252,.22);text-decoration:none;color:var(--text-main)}
+.account-promo-card .promo-badge{color:#d1fae5;background:linear-gradient(135deg,rgba(16,185,129,.28),rgba(59,130,246,.18));border:1px solid rgba(167,243,208,.24)}
+.account-promo-card .promo-content{flex:1;min-width:0}
+.account-promo-card .promo-title{font-size:1rem;font-weight:800;color:#fff;line-height:1.45;margin-bottom:6px}
+.account-promo-card .promo-desc{font-size:.95rem;color:rgba(226,232,240,.92);line-height:1.6}      @media (max-width:768px){
         .header h1{font-size:2.2rem}.container{padding:0 10px}.grid-resources{grid-template-columns:1fr;gap:15px}
         .grid-partners{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:10px}
         .fab-container{bottom:18px;gap:10px;width:calc(100% - 20px)}.fab-btn{padding:10px 14px;font-size:.85rem}
