@@ -703,7 +703,7 @@ class NooMiNav {
 
     render_HomePage() {
 
-    render_AdminDashboard(dbData, m) {
+      render_AdminDashboard(dbData, m) {
     const { statsMap, dailyMap, periodMap, monthContextMap, monthTotalClicks, isDayMode } = dbData;
     const safeLinks = Array.isArray(this.LINKS_DATA) ? this.LINKS_DATA : [];
     const safeFriends = Array.isArray(this.FRIENDS_DATA) ? this.FRIENDS_DATA : [];
@@ -862,12 +862,20 @@ class NooMiNav {
 
     const accountPreview =
       (String(this.config.account_enable || '0') === '1' && String(this.config.account_content || '').trim())
-        ? `<div class="panel notice-panel">
-             <div class="panel-head"><span>🧾</span><strong>账号推广卡预览</strong></div>
-             <div class="account-preview-box">
-               <div class="account-preview-rich">${this.renderRichContent(this.config.account_content || '', this.config.account_format || 'markdown')}</div>
-             </div>
-           </div>`
+        ? (() => {
+            let rendered = this.renderRichContent(this.config.account_content || '', this.config.account_format || 'markdown');
+            rendered = rendered.replace(/<div class="ad-badge">[\s\S]*?<\/div>/i, '');
+
+            return `<div class="panel notice-panel">
+              <div class="panel-head"><span>🧾</span><strong>账号推广卡预览</strong></div>
+              <div class="promo-preview-box account-promo-preview-box">
+                <div class="promo-preview-badge account-preview-badge">账号购买</div>
+                <div class="promo-preview-main">
+                  <div class="promo-preview-desc account-preview-desc">${rendered}</div>
+                </div>
+              </div>
+            </div>`;
+          })()
         : '';
 
     return `<!DOCTYPE html><html lang="zh-CN"><head>${this.render_Head(this.config.title)}<style>
@@ -1344,52 +1352,41 @@ class NooMiNav {
       }
       .promo-preview-desc a{ color:#93c5fd; }
 
-      .account-preview-box{
-        padding:14px;
-        border-radius:18px;
-        background:linear-gradient(135deg, rgba(16,185,129,.10), rgba(59,130,246,.08));
-        border:1px solid var(--bd);
+      .account-promo-preview-box{
+        background:linear-gradient(135deg, rgba(255,255,255,0.08), rgba(16,185,129,0.08));
       }
-      .account-preview-rich h1,
-      .account-preview-rich h2,
-      .account-preview-rich h3{ margin:0 0 10px; line-height:1.35; }
-      .account-preview-rich h1{ font-size:1.15rem; }
-      .account-preview-rich h2{ font-size:1.08rem; }
-      .account-preview-rich h3{ font-size:1rem; }
-      .account-preview-rich p{
-        margin:0 0 10px;
+      .account-preview-badge{
+        color:#d1fae5;
+        background:linear-gradient(135deg, rgba(16,185,129,0.24), rgba(59,130,246,0.14));
+        border:1px solid rgba(167,243,208,0.18);
+      }
+      .account-preview-desc{
         color:var(--txt-soft);
         line-height:1.75;
-        font-size:.92rem;
+        font-size:.93rem;
       }
-      .account-preview-rich ul{ margin:0 0 12px 18px; padding:0; }
-      .account-preview-rich li{ margin:6px 0; color:var(--txt-soft); }
-      .account-preview-rich code{
+      .account-preview-desc h1,
+      .account-preview-desc h2,
+      .account-preview-desc h3{ margin:0 0 8px; line-height:1.35; }
+      .account-preview-desc p{ margin:0 0 8px; }
+      .account-preview-desc p:last-child{ margin-bottom:0; }
+      .account-preview-desc ul{ margin:4px 0 0 18px; padding:0; }
+      .account-preview-desc li{ margin:4px 0; }
+      .account-preview-desc code{
         padding:2px 6px;
         border-radius:8px;
         background:rgba(255,255,255,.06);
         border:1px solid var(--bd);
       }
-      .account-preview-rich a{ color:#93c5fd; word-break:break-all; }
-      .account-preview-rich .ad-badge{
-        display:inline-flex;
-        align-items:center;
-        padding:4px 10px;
-        margin-bottom:10px;
-        font-size:.72rem;
-        font-weight:800;
-        border-radius:999px;
-        background:rgba(16,185,129,.18);
-        border:1px solid rgba(16,185,129,.35);
-        color:#d1fae5;
-      }
-      .account-preview-rich .ad-btn{
+      .account-preview-desc a{ color:#93c5fd; }
+      .account-preview-desc .ad-badge{ display:none !important; }
+      .account-preview-desc .ad-btn{
         display:inline-flex;
         align-items:center;
         justify-content:center;
-        margin-top:10px;
-        padding:10px 14px;
-        border-radius:12px;
+        margin-top:8px;
+        padding:9px 12px;
+        border-radius:10px;
         text-decoration:none;
         color:#fff;
         font-weight:800;
@@ -1667,7 +1664,6 @@ class NooMiNav {
         .settings-head,.settings-body{ padding:16px; }
         .promo-preview-box{ flex-direction:column; }
         .promo-preview-badge{ min-width:auto; width:fit-content; }
-        .account-preview-box{ flex-direction:column; }
       }
       </style></head>
       <body>
@@ -1770,7 +1766,7 @@ class NooMiNav {
             <div class="settings-head">
               <div>
                 <h3 class="settings-title">⚙️ 系统全局配置</h3>
-                <div class="settings-sub">支持 JSON 自动格式化、示例模板填充、推广卡 HTML / Markdown 内容配置、右侧账号广告配置。</div>
+                <div class="settings-sub">支持 JSON 自动格式化、示例模板填充、推广卡 HTML / Markdown 内容配置、账号推广卡配置。</div>
               </div>
               <div class="settings-actions">
                 <button type="button" class="action-btn action-soft" onclick="cls()">取消 (Esc)</button>
@@ -1859,40 +1855,40 @@ class NooMiNav {
                 </div>
 
                 <div class="field full">
-  <label>账号推广卡开关 / 配置（首页中部）</label>
-  <div class="switch-row" style="margin-bottom:12px;">
-    <label class="switch">
-      <input type="checkbox" id="s_account_enable">
-      <span class="slider"></span>
-    </label>
-    <span style="color:var(--txt-sub);font-weight:700;">启用首页账号推广卡</span>
-  </div>
+                  <label>账号推广卡开关 / 配置（首页中部）</label>
+                  <div class="switch-row" style="margin-bottom:12px;">
+                    <label class="switch">
+                      <input type="checkbox" id="s_account_enable">
+                      <span class="slider"></span>
+                    </label>
+                    <span style="color:var(--txt-sub);font-weight:700;">启用首页账号推广卡</span>
+                  </div>
 
-  <div class="settings-grid">
-    <div class="field">
-      <label>内容格式</label>
-      <select id="s_account_format">
-        <option value="markdown">Markdown</option>
-        <option value="html">HTML</option>
-      </select>
-    </div>
+                  <div class="settings-grid">
+                    <div class="field">
+                      <label>内容格式</label>
+                      <select id="s_account_format">
+                        <option value="markdown">Markdown</option>
+                        <option value="html">HTML</option>
+                      </select>
+                    </div>
 
-    <div class="field">
-      <label>快捷填充</label>
-      <div class="field-tools" style="margin-bottom:0;">
-        <button type="button" class="mini-btn" onclick="fillAccountMarkdownExample()">填入 Markdown 示例</button>
-        <button type="button" class="mini-btn" onclick="fillAccountHtmlExample()">填入 HTML 示例</button>
-      </div>
-      <small>推荐优先使用 Markdown。想做按钮、自定义结构时用 HTML。</small>
-    </div>
-  </div>
+                    <div class="field">
+                      <label>快捷填充</label>
+                      <div class="field-tools" style="margin-bottom:0;">
+                        <button type="button" class="mini-btn" onclick="fillAccountMarkdownExample()">填入 Markdown 示例</button>
+                        <button type="button" class="mini-btn" onclick="fillAccountHtmlExample()">填入 HTML 示例</button>
+                      </div>
+                      <small>推荐优先使用 Markdown。想做按钮、自定义结构时用 HTML。</small>
+                    </div>
+                  </div>
 
-  <div style="margin-top:16px;">
-    <label style="display:block;margin-bottom:10px;font-size:.88rem;color:var(--txt-sub);font-weight:800;">推广卡内容</label>
-    <textarea id="s_account_content" class="code" style="min-height:220px" placeholder="可直接粘贴 Markdown 或 HTML 片段"></textarea>
-    <small>内容会直接渲染到首页中部账号推广卡。HTML 模式下请只粘贴你自己信任的代码，不要放 script。</small>
-  </div>
-</div>
+                  <div style="margin-top:16px;">
+                    <label style="display:block;margin-bottom:10px;font-size:.88rem;color:var(--txt-sub);font-weight:800;">推广卡内容</label>
+                    <textarea id="s_account_content" class="code" style="min-height:220px" placeholder="可直接粘贴 Markdown 或 HTML 片段"></textarea>
+                    <small>内容会直接渲染到首页中部账号推广卡。HTML 模式下请只粘贴你自己信任的代码，不要放 script。</small>
+                  </div>
+                </div>
 
                 <div class="field full">
                   <label>自定义卡片跳转域名</label>
@@ -2176,5 +2172,5 @@ class NooMiNav {
           });
         </script>
       </body></html>`;
-  }
+  }  
 }
